@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ArrowLeftRight, Tag, BarChart3, LogOut, Menu, X, Store } from 'lucide-react';
+import { LayoutDashboard, Package, ArrowLeftRight, Tag, BarChart3, LogOut, Menu, X, Store, Zap } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 
 const NAV_ITEMS = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/admin/quick-update', icon: Zap, label: 'Atualização Rápida' },
   { path: '/admin/products', icon: Package, label: 'Produtos' },
   { path: '/admin/stock', icon: ArrowLeftRight, label: 'Estoque' },
   { path: '/admin/promotions', icon: Tag, label: 'Promoções' },
