@@ -1,0 +1,75 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do produto"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o curta do produto"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "cervejas",
+        "refrigerantes",
+        "energeticos",
+        "aguas",
+        "destilados",
+        "vinhos",
+        "sucos",
+        "gelo"
+      ],
+      "description": "Categoria do produto"
+    },
+    "price": {
+      "type": "number",
+      "description": "Pre\u00e7o de venda"
+    },
+    "cost_price": {
+      "type": "number",
+      "description": "Pre\u00e7o de custo"
+    },
+    "stock": {
+      "type": "number",
+      "default": 0,
+      "description": "Quantidade em estoque"
+    },
+    "min_stock": {
+      "type": "number",
+      "default": 5,
+      "description": "Estoque m\u00ednimo para alerta"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL da imagem do produto"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Produto em destaque / mais vendido"
+    },
+    "is_new": {
+      "type": "boolean",
+      "default": false,
+      "description": "Produto \u00e9 lan\u00e7amento"
+    },
+    "total_sold": {
+      "type": "number",
+      "default": 0,
+      "description": "Total de unidades vendidas"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Produto ativo no cat\u00e1logo"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "price"
+  ]
+}

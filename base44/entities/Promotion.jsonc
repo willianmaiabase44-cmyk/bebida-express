@@ -1,0 +1,48 @@
+{
+  "name": "Promotion",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "ID do produto em promo\u00e7\u00e3o"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Nome do produto"
+    },
+    "original_price": {
+      "type": "number",
+      "description": "Pre\u00e7o original"
+    },
+    "promo_price": {
+      "type": "number",
+      "description": "Pre\u00e7o promocional"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de in\u00edcio"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de t\u00e9rmino"
+    },
+    "banner_url": {
+      "type": "string",
+      "description": "URL do banner promocional"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Promo\u00e7\u00e3o ativa"
+    }
+  },
+  "required": [
+    "product_id",
+    "product_name",
+    "promo_price",
+    "start_date",
+    "end_date"
+  ]
+}
