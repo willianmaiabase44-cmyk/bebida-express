@@ -1,0 +1,76 @@
+{
+  "name": "Delivery",
+  "type": "object",
+  "properties": {
+    "client_name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "client_phone": {
+      "type": "string",
+      "description": "Telefone do cliente"
+    },
+    "address": {
+      "type": "string",
+      "description": "Endere\u00e7o completo de entrega"
+    },
+    "reference": {
+      "type": "string",
+      "description": "Ponto de refer\u00eancia"
+    },
+    "items_description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o dos itens entregues"
+    },
+    "total": {
+      "type": "number",
+      "default": 0,
+      "description": "Valor total do pedido"
+    },
+    "motoboy_id": {
+      "type": "string",
+      "description": "ID do motoboy designado"
+    },
+    "motoboy_name": {
+      "type": "string",
+      "description": "Nome do motoboy designado"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "em_rota",
+        "entregue",
+        "cancelada"
+      ],
+      "default": "pendente",
+      "description": "Status da entrega"
+    },
+    "lat": {
+      "type": "number",
+      "description": "Latitude do endere\u00e7o de entrega"
+    },
+    "lng": {
+      "type": "number",
+      "description": "Longitude do endere\u00e7o de entrega"
+    },
+    "distance": {
+      "type": "number",
+      "description": "Dist\u00e2ncia da rota em metros"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Tempo estimado da rota em segundos"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da entrega"
+    }
+  },
+  "required": [
+    "client_name",
+    "address",
+    "date"
+  ]
+}

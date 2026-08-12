@@ -1,0 +1,57 @@
+{
+  "name": "DeliveryDriver",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do motoboy"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefone / WhatsApp"
+    },
+    "vehicle_type": {
+      "type": "string",
+      "enum": [
+        "moto",
+        "carro",
+        "bicicleta"
+      ],
+      "default": "moto",
+      "description": "Tipo de ve\u00edculo"
+    },
+    "plate": {
+      "type": "string",
+      "description": "Placa do ve\u00edculo"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "disponivel",
+        "ocupado",
+        "offline"
+      ],
+      "default": "disponivel",
+      "description": "Status atual do motoboy"
+    },
+    "rating": {
+      "type": "number",
+      "default": 5,
+      "description": "Avalia\u00e7\u00e3o m\u00e9dia (0 a 5)"
+    },
+    "total_deliveries": {
+      "type": "number",
+      "default": 0,
+      "description": "Total de entregas realizadas"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Motoboy ativo no sistema"
+    }
+  },
+  "required": [
+    "name",
+    "phone"
+  ]
+}

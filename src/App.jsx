@@ -27,6 +27,8 @@ import Promotions from '@/pages/admin/Promotions';
 import Reports from '@/pages/admin/Reports';
 import QuickUpdate from '@/pages/admin/QuickUpdate';
 import POS from '@/pages/admin/POS';
+import Motoboys from '@/pages/admin/Motoboys';
+import Deliveries from '@/pages/admin/Deliveries';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -67,6 +69,8 @@ const AuthenticatedApp = () => {
           <Route path="/admin/stock" element={<StockManagement />} />
           <Route path="/admin/promotions" element={<Promotions />} />
           <Route path="/admin/pos" element={<POS />} />
+          <Route path="/admin/motoboys" element={<Motoboys />} />
+          <Route path="/admin/deliveries" element={<Deliveries />} />
           <Route path="/admin/quick-update" element={<QuickUpdate />} />
           <Route path="/admin/reports" element={<Reports />} />
         </Route>
