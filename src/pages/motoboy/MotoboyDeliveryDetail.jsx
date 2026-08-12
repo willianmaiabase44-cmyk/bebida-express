@@ -4,11 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, MapPin, Package, CreditCard, DollarSign, Phone, Navigation, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Loader2, ArrowLeft, MapPin, Package, CreditCard, DollarSign, Phone, Navigation, CheckCircle2, ExternalLink, Clock, Route } from 'lucide-react';
 import { useMotoboy } from '@/context/MotoboyContext';
 import { formatPrice } from '@/lib/constants';
 import { toast } from 'sonner';
-import RouteMap from '@/components/admin/RouteMap';
+import LiveRouteMap from '@/components/motoboy/LiveRouteMap';
 
 const PAYMENT_LABELS = { dinheiro: 'Dinheiro', pix: 'PIX', cartao_entrega: 'Cartão na Entrega' };
 
@@ -27,7 +27,6 @@ export default function MotoboyDeliveryDetail() {
   const [loading, setLoading] = useState(true);
   const [routeLoading, setRouteLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showMap, setShowMap] = useState(false);
 
   const load = async () => {
     try {
@@ -53,24 +52,22 @@ export default function MotoboyDeliveryDetail() {
 
   useEffect(() => { load(); }, [id]);
 
-  const loadRoute = async () => {
-    if (!order?.address) return;
-    setRouteLoading(true);
-    try {
-      const res = await base44.functions.invoke('getDeliveryRoute', {
-        address: order.address,
-      });
-      if (res.data?.error) {
-        toast.error(res.data.error);
-      } else {
-        setRoute(res.data);
-      }
-    } catch (e) {
-      toast.error('Erro ao carregar rota');
-    } finally {
-      setRouteLoading(false);
+  // Carrega a rota automaticamente quando o pedido é carregado
+  useEffect(() => {
+    if (order?.address && !route && !routeLoading) {
+      setRouteLoading(true);
+      base44.functions.invoke('getDeliveryRoute', { address: order.address })
+        .then(res => {
+          if (res.data?.error) {
+            toast.error(res.data.error);
+          } else {
+            setRoute(res.data);
+          }
+        })
+        .catch(() => toast.error('Erro ao carregar rota'))
+        .finally(() => setRouteLoading(false));
     }
-  };
+  }, [order]);
 
   const handleAccept = async () => {
     setActionLoading(true);
@@ -223,47 +220,46 @@ export default function MotoboyDeliveryDetail() {
         </CardContent>
       </Card>
 
-      {/* Rota e Mapa */}
-      {(canAccept || canDeliver) && (
+      {/* Rota e Mapa com rastreamento ao vivo */}
+      {(canAccept || canDeliver || order.status === 'entregue') && (
         <Card className="bg-card border-border">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold flex items-center gap-2">
-                <Navigation className="w-4 h-4 text-primary" /> Rota da Entrega
+                <Route className="w-4 h-4 text-primary" /> Rota da Entrega
               </h3>
               {route && (
-                <div className="text-right text-xs text-muted-foreground">
-                  <p>{(route.distance / 1000).toFixed(1)} km</p>
-                  <p>{Math.round(route.duration / 60)} min</p>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><Navigation className="w-3 h-3" /> {(route.distance / 1000).toFixed(1)} km</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {Math.round(route.duration / 60)} min</span>
                 </div>
               )}
             </div>
 
-            {!showMap && !route && (
-              <Button variant="outline" className="w-full" onClick={() => { setShowMap(true); loadRoute(); }} disabled={routeLoading}>
-                {routeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Navigation className="w-4 h-4" /> Ver Rota</>}
-              </Button>
-            )}
-
-            {showMap && routeLoading && (
-              <div className="h-64 flex items-center justify-center">
+            {routeLoading && (
+              <div className="h-[350px] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             )}
 
-            {showMap && route && (
-              <div className="space-y-3">
-                <RouteMap
-                  storeCoords={[route.store_lat, route.store_lon]}
-                  clientCoords={[route.client_lat, route.client_lon]}
-                  routeGeometry={route.route_geometry}
-                  height="300px"
-                />
-                <Button variant="outline" className="w-full gap-2" onClick={openGoogleMaps}>
-                  <ExternalLink className="w-4 h-4" /> Abrir no Google Maps
-                </Button>
+            {!routeLoading && route && (
+              <LiveRouteMap
+                storeCoords={[route.store_lat, route.store_lon]}
+                clientCoords={[route.client_lat, route.client_lon]}
+                routeGeometry={route.route_geometry}
+                height="350px"
+              />
+            )}
+
+            {!routeLoading && !route && (
+              <div className="h-24 flex items-center justify-center text-sm text-muted-foreground">
+                Não foi possível carregar a rota
               </div>
             )}
+
+            <Button variant="outline" className="w-full gap-2" onClick={openGoogleMaps}>
+              <ExternalLink className="w-4 h-4" /> Abrir no Google Maps / Waze
+            </Button>
           </CardContent>
         </Card>
       )}
