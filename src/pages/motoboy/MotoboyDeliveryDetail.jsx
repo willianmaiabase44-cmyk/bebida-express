@@ -238,9 +238,9 @@ export default function MotoboyDeliveryDetail() {
         </CardContent>
       </Card>
 
-      {/* Rota e Mapa com rastreamento ao vivo (só no celular) */}
+      {/* Rota e Mapa com rastreamento ao vivo */}
       {(canDeliver || order.status === 'entregue') && (
-        <Card className="bg-card border-border md:hidden">
+        <Card className="bg-card border-border">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold flex items-center gap-2">
