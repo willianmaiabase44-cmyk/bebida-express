@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-// Coordenadas da loja (Beba+ Mini Mercado) — altere para o endereço real
+// Coordenadas da loja (Smoke Bebidas) — altere para o endereço real
 const STORE_LAT = -23.5505;
 const STORE_LON = -46.6333;
 
@@ -17,7 +17,7 @@ export default async function(req) {
     // 1. Geocodificar endereço do cliente via Nominatim (OpenStreetMap)
     const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Brasil')}&limit=1`;
     const geoRes = await fetch(geoUrl, {
-      headers: { 'User-Agent': 'BebaPlus-MiniMercado/1.0' }
+      headers: { 'User-Agent': 'SmokeBebidas/1.0' }
     });
     const geoData = await geoRes.json();
 

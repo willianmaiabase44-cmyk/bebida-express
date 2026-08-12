@@ -298,7 +298,7 @@ export default function Deliveries() {
                     height="350px"
                   />
                   <p className="text-xs text-muted-foreground text-center">
-                    🔴 Loja Beba+ &nbsp;→&nbsp; 🔵 Cliente
+                    🔴 Smoke Bebidas &nbsp;→&nbsp; 🔵 Cliente
                   </p>
                 </>
               ) : (

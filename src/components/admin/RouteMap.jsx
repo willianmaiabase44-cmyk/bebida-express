@@ -41,7 +41,7 @@ export default function RouteMap({ storeCoords, clientCoords, routeGeometry, hei
         <FitBounds bounds={bounds} />
         {storeCoords && (
           <Marker position={storeCoords} icon={storeIcon}>
-            <Popup><b>Loja Beba+</b></Popup>
+            <Popup><b>Smoke Bebidas</b></Popup>
           </Marker>
         )}
         {clientCoords && (
