@@ -142,13 +142,7 @@ export default function LiveRouteMap({ storeCoords, clientCoords, routeGeometry,
     <div className="relative" style={{ height: navigating ? '60vh' : height, width: '100%' }}>
       <div
         className="rounded-lg overflow-hidden border border-border"
-        style={{
-          height: '100%',
-          width: '100%',
-          transform: navigating ? 'perspective(900px) rotateX(48deg) scale(1.08)' : 'none',
-          transformOrigin: 'center bottom',
-          transition: 'transform 0.6s ease',
-        }}
+        style={{ height: '100%', width: '100%' }}
       >
         <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
           <TileLayer
