@@ -13,7 +13,6 @@ import LiveRouteMap from '@/components/motoboy/LiveRouteMap';
 const PAYMENT_LABELS = { dinheiro: 'Dinheiro', pix: 'PIX', cartao_entrega: 'Cartão na Entrega' };
 
 const STATUS_INFO = {
-  pronto: { label: 'Aguardando Aceite', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
   saiu_para_entrega: { label: 'Saiu para Entrega', color: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
   entregue: { label: 'Entregue', color: 'bg-green-500/15 text-green-400 border-green-500/30' },
 };
@@ -110,27 +109,6 @@ export default function MotoboyDeliveryDetail() {
     }
   }, [order]);
 
-  const handleAccept = async () => {
-    setActionLoading(true);
-    try {
-      const res = await base44.functions.invoke('motoboyManageOrder', {
-        action: 'accept',
-        order_id: order.id,
-        motoboy_id: motoboy.id,
-      });
-      if (res.data?.error) {
-        toast.error(res.data.error);
-      } else {
-        toast.success('Entrega aceita! Saiu para entrega.');
-        load();
-      }
-    } catch (e) {
-      toast.error('Erro ao aceitar entrega');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const handleDeliver = async () => {
     if (!confirm('Confirmar entrega do pedido #' + order.order_number + '?')) return;
     setActionLoading(true);
@@ -179,8 +157,7 @@ export default function MotoboyDeliveryDetail() {
     );
   }
 
-  const si = STATUS_INFO[order.status] || STATUS_INFO.pronto;
-  const canAccept = order.status === 'pronto';
+  const si = STATUS_INFO[order.status] || STATUS_INFO.saiu_para_entrega;
   const canDeliver = order.status === 'saiu_para_entrega';
 
   return (
@@ -262,7 +239,7 @@ export default function MotoboyDeliveryDetail() {
       </Card>
 
       {/* Rota e Mapa com rastreamento ao vivo */}
-      {(canAccept || canDeliver || order.status === 'entregue') && (
+      {(canDeliver || order.status === 'entregue') && (
         <Card className="bg-card border-border">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -307,11 +284,6 @@ export default function MotoboyDeliveryDetail() {
 
       {/* Ações */}
       <div className="space-y-3">
-        {canAccept && (
-          <Button size="lg" className="w-full h-14 text-base" onClick={handleAccept} disabled={actionLoading}>
-            {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Aceitar Entrega</>}
-          </Button>
-        )}
         {canDeliver && (
           <Button size="lg" className="w-full h-14 text-base bg-green-600 hover:bg-green-700" onClick={handleDeliver} disabled={actionLoading}>
             {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle2 className="w-5 h-5" /> Marcar como Entregue</>}

@@ -71,7 +71,7 @@ export default function Orders() {
       if (res.data?.error) {
         toast.error(res.data.error);
       } else {
-        toast.success(`${motoboy.name} designado para a entrega`);
+        toast.success(`${motoboy.name} enviado para a entrega`);
         load();
       }
     } catch (e) {
@@ -115,9 +115,8 @@ export default function Orders() {
           {filtered.map(order => {
             const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.novo;
             const isNew = order.status === "novo";
-            const isWaitingAccept = order.status === "pronto" && order.motoboy_id;
-            const displayLabel = isWaitingAccept ? "Aguardando Aceite" : sc.label;
-            const displayColor = isWaitingAccept ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : sc.color;
+            const displayLabel = sc.label;
+            const displayColor = sc.color;
             return (
               <Card key={order.id} className={`bg-card border-border ${isNew ? "border-blue-500/40 ring-1 ring-blue-500/20" : ""}`}>
                 <CardContent className="p-4">
@@ -163,8 +162,8 @@ export default function Orders() {
                       </Select>
                     )}
                     {order.status === "pronto" && order.motoboy_id && (
-                      <span className="text-xs text-amber-400 flex items-center gap-1 px-2 py-1 bg-amber-500/10 rounded-md">
-                        <Bike className="w-3.5 h-3.5" /> {order.motoboy_name} — aguardando aceite
+                      <span className="text-xs text-orange-400 flex items-center gap-1 px-2 py-1 bg-orange-500/10 rounded-md">
+                        <Bike className="w-3.5 h-3.5" /> {order.motoboy_name} — em rota
                       </span>
                     )}
                     {order.status === "saiu_para_entrega" && (

@@ -11,7 +11,6 @@ import { formatPrice } from '@/lib/constants';
 const PAYMENT_LABELS = { dinheiro: 'Dinheiro', pix: 'PIX', cartao_entrega: 'Cartão na Entrega' };
 
 const STATUS_INFO = {
-  pronto: { label: 'Aguardando Aceite', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
   saiu_para_entrega: { label: 'Saiu para Entrega', color: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
 };
 
@@ -53,13 +52,13 @@ export default function MotoboyDashboard() {
           <CardContent className="py-16 text-center text-muted-foreground">
             <Bike className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">Nenhuma entrega no momento</p>
-            <p className="text-sm mt-1">Aguarde o administrador designar pedidos para você</p>
+            <p className="text-sm mt-1">Aguarde o administrador enviar pedidos para você</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {orders.map(order => {
-            const si = STATUS_INFO[order.status] || STATUS_INFO.pronto;
+            const si = STATUS_INFO[order.status] || STATUS_INFO.saiu_para_entrega;
             return (
               <Card key={order.id} className="bg-card border-border">
                 <CardContent className="p-4 space-y-3">

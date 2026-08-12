@@ -20,7 +20,7 @@ export default async function (req) {
     const history = [...(order.status_history || []), { status: "", date: now, by: "" }];
 
     if (action === "assign") {
-      // Admin designa o motoboy — pedido continua "pronto", aguardando aceite
+      // Admin designa o motoboy e envia direto para entrega — status -> saiu_para_entrega
       const user = await base44.auth.me();
       if (!user || user.role !== "admin") {
         return Response.json({ error: "Apenas administradores podem designar motoboys" }, { status: 403 });
@@ -31,7 +31,7 @@ export default async function (req) {
       if (!driver) return Response.json({ error: "Motoboy não encontrado" }, { status: 404 });
 
       history[history.length - 1] = {
-        status: order.status,
+        status: "saiu_para_entrega",
         date: now,
         by: `admin — designou ${driver.name}`,
       };
@@ -40,8 +40,13 @@ export default async function (req) {
         motoboy_id: driver.id,
         motoboy_name: driver.name,
         motoboy_assigned_at: now,
+        accepted_at: now,
+        status: "saiu_para_entrega",
         status_history: history,
       });
+
+      // Marca motoboy como ocupado imediatamente
+      await base44.asServiceRole.entities.DeliveryDriver.update(motoboyId, { status: "ocupado" });
 
       return Response.json({ ok: true, motoboy_name: driver.name });
     }
