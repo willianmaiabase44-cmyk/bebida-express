@@ -39,13 +39,9 @@ export default async function (req) {
       });
     }
 
-    // Cliente novo — precisa de nome e endereço para cadastrar
+    // Cliente novo — precisa de nome (endereço é opcional, adicionado no checkout)
     if (!name) {
       return Response.json({ exists: false });
-    }
-
-    if (!address || !address.cep || !address.street || !address.number || !address.district || !address.city || !address.state) {
-      return Response.json({ error: "Endereço incompleto" }, { status: 400 });
     }
 
     const customer = await base44.asServiceRole.entities.Customer.create({
@@ -53,22 +49,31 @@ export default async function (req) {
       phone: normalizedPhone,
     });
 
-    const addr = await base44.asServiceRole.entities.CustomerAddress.create({
-      customer_id: customer.id,
-      label: address.label || "Casa",
-      cep: address.cep,
-      street: address.street,
-      number: address.number,
-      complement: address.complement || "",
-      district: address.district,
-      city: address.city,
-      state: address.state,
-      reference: address.reference || "",
-    });
+    // Se veio endereço completo, cria junto
+    if (address && address.cep && address.street && address.number && address.district && address.city && address.state) {
+      const addr = await base44.asServiceRole.entities.CustomerAddress.create({
+        customer_id: customer.id,
+        label: address.label || "Casa",
+        cep: address.cep,
+        street: address.street,
+        number: address.number,
+        complement: address.complement || "",
+        district: address.district,
+        city: address.city,
+        state: address.state,
+        reference: address.reference || "",
+      });
+
+      return Response.json({
+        customer,
+        addresses: [addr],
+        is_new: true,
+      });
+    }
 
     return Response.json({
       customer,
-      addresses: [addr],
+      addresses: [],
       is_new: true,
     });
   } catch (error) {

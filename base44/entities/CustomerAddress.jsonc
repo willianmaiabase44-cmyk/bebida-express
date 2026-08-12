@@ -2,6 +2,10 @@
   "name": "CustomerAddress",
   "type": "object",
   "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "ID do cliente propriet\u00e1rio do endere\u00e7o"
+    },
     "label": {
       "type": "string",
       "description": "Apelido do endere\u00e7o (Casa, Trabalho...)",
@@ -49,6 +53,7 @@
     }
   },
   "required": [
+    "customer_id",
     "cep",
     "street",
     "number",

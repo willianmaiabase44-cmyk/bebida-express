@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useCart } from "@/context/CartContext";
+import { useCustomer } from "@/context/CustomerContext";
 import { formatPrice } from "@/lib/constants";
 import { toast } from "sonner";
-import { Loader2, MapPin, Plus, Truck, ShoppingBag, CheckCircle2, ArrowLeft, Home } from "lucide-react";
+import { Loader2, MapPin, Plus, Truck, ShoppingBag, CheckCircle2, ArrowLeft } from "lucide-react";
 import AddressForm from "@/components/checkout/AddressForm";
 
 const PAYMENT_OPTIONS = [
@@ -22,6 +23,7 @@ const PAYMENT_OPTIONS = [
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCart();
+  const { customer } = useCustomer();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -34,10 +36,15 @@ export default function Checkout() {
   const [placing, setPlacing] = useState(false);
 
   const loadAddresses = async () => {
+    if (!customer) return;
     try {
-      const list = await base44.entities.CustomerAddress.list("-created_date");
-      setAddresses(list || []);
-      if (list?.length > 0 && !selectedAddressId) setSelectedAddressId(list[0].id);
+      const res = await base44.functions.invoke("manageCustomerAddress", {
+        action: "list",
+        customer_id: customer.id,
+      });
+      const list = res.data?.addresses || [];
+      setAddresses(list);
+      if (list.length > 0 && !selectedAddressId) setSelectedAddressId(list[0].id);
     } catch (e) {
       toast.error("Erro ao carregar endereços");
     } finally {
@@ -45,9 +52,8 @@ export default function Checkout() {
     }
   };
 
-  useEffect(() => { loadAddresses(); }, []);
+  useEffect(() => { loadAddresses(); }, [customer]);
 
-  // Calcula frete quando endereço é selecionado
   useEffect(() => {
     if (!selectedAddressId || items.length === 0) {
       setFreightData(null);
@@ -65,7 +71,11 @@ export default function Checkout() {
 
   const handleAddAddress = async (formData) => {
     try {
-      await base44.entities.CustomerAddress.create(formData);
+      await base44.functions.invoke("manageCustomerAddress", {
+        action: "create",
+        customer_id: customer.id,
+        address: formData,
+      });
       toast.success("Endereço adicionado!");
       setAddDialogOpen(false);
       loadAddresses();
@@ -89,6 +99,7 @@ export default function Checkout() {
           kit_items: i.kitItems ? i.kitItems.map(ki => `${ki.quantity}x ${ki.name}`).join(", ") : "",
         })),
         address_id: selectedAddressId,
+        customer_id: customer.id,
         payment_method: paymentMethod,
         change_for: paymentMethod === "dinheiro" && changeFor ? parseFloat(changeFor) : null,
         notes,
@@ -131,7 +142,6 @@ export default function Checkout() {
         <h1 className="font-heading text-2xl font-bold">Finalizar Pedido</h1>
       </div>
 
-      {/* Endereço */}
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base"><MapPin className="w-4 h-4 text-primary" /> Endereço de Entrega</CardTitle>
@@ -173,7 +183,6 @@ export default function Checkout() {
         </CardContent>
       </Card>
 
-      {/* Frete */}
       {selectedAddressId && (
         <Card className="bg-card border-border">
           <CardContent className="p-4">
@@ -195,7 +204,6 @@ export default function Checkout() {
         </Card>
       )}
 
-      {/* Pagamento */}
       <Card className="bg-card border-border">
         <CardHeader className="pb-3"><CardTitle className="text-base">Forma de Pagamento</CardTitle></CardHeader>
         <CardContent className="space-y-2">
@@ -223,7 +231,6 @@ export default function Checkout() {
         </CardContent>
       </Card>
 
-      {/* Resumo */}
       <Card className="bg-card border-border">
         <CardHeader className="pb-3"><CardTitle className="text-base">Resumo do Pedido</CardTitle></CardHeader>
         <CardContent className="space-y-3">

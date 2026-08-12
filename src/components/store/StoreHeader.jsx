@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingCart, Search, Menu, X, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '@/context/CartContext';
+import { useCustomer } from '@/context/CustomerContext';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { CATEGORIES } from '@/lib/constants';
 
 export default function StoreHeader({ searchQuery, onSearchChange, activeCategory, onCategoryChange, onCartOpen }) {
   const { itemCount } = useCart();
+  const { customer } = useCustomer();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -40,11 +42,21 @@ export default function StoreHeader({ searchQuery, onSearchChange, activeCategor
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
-            <Link to="/minha-conta">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <User className="w-5 h-5" />
-              </Button>
-            </Link>
+            {customer ? (
+              <Link to="/minha-conta">
+                <Button variant="ghost" size="sm" className="gap-2 rounded-full">
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline text-sm max-w-[100px] truncate">{customer.name.split(" ")[0]}</span>
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/register">
+                <Button variant="ghost" size="sm" className="gap-2 rounded-full">
+                  <User className="w-4 h-4" />
+                  <span className="text-sm">Entrar</span>
+                </Button>
+              </Link>
+            )}
             <Button variant="ghost" size="icon" className="relative" onClick={onCartOpen}>
               <ShoppingCart className="w-5 h-5" />
               {itemCount > 0 && (

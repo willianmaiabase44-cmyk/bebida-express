@@ -2,6 +2,10 @@
   "name": "Order",
   "type": "object",
   "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "ID do cliente que fez o pedido"
+    },
     "order_number": {
       "type": "number",
       "description": "N\u00famero sequencial do pedido"

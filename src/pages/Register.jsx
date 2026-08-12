@@ -1,212 +1,169 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Smartphone, Loader2, User } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
-import GoogleIcon from "@/components/GoogleIcon";
-import { toast } from "@/components/ui/use-toast";
+import { useCustomer } from "@/context/CustomerContext";
+import { toast } from "sonner";
 
 export default function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { login } = useCustomer();
+  const [step, setStep] = useState("phone");
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showOtp, setShowOtp] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  const formatPhone = (val) => {
+    let d = val.replace(/\D/g, "");
+    if (d.length > 11) d = d.slice(0, 11);
+    if (d.length <= 10) {
+      return d.replace(/(\d{2})(\d{0,4})(\d{0,4})/, (_, a, b, c) =>
+        `(${a}) ${b}${c ? `-${c}` : ""}`.trim()
+      );
+    }
+    return d.replace(/(\d{2})(\d{5})(\d{0,4})/, (_, a, b, c) =>
+      `(${a}) ${b}${c ? `-${c}` : ""}`.trim()
+    );
+  };
+
+  const handlePhoneSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      setError("Digite um celular válido com DDD");
       return;
     }
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
-      setShowOtp(true);
+      const res = await base44.functions.invoke("customerAuth", { phone: cleanPhone });
+      const data = res.data;
+      if (data.error) {
+        setError(data.error);
+      } else if (data.exists === false) {
+        setStep("name");
+      } else if (data.customer) {
+        login(data.customer);
+        toast.success(`Bem-vindo, ${data.customer.name}!`);
+        navigate("/");
+      }
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.response?.data?.error || "Erro ao verificar celular");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerify = async () => {
+  const handleNameSubmit = async (e) => {
+    e.preventDefault();
     setError("");
+    if (!name.trim()) {
+      setError("Digite seu nome");
+      return;
+    }
     setLoading(true);
     try {
-      const result = await base44.auth.verifyOtp({ email, otpCode });
-      if (result?.access_token) {
-        base44.auth.setToken(result.access_token);
+      const cleanPhone = phone.replace(/\D/g, "");
+      const res = await base44.functions.invoke("customerAuth", {
+        phone: cleanPhone,
+        name: name.trim(),
+      });
+      const data = res.data;
+      if (data.error) {
+        setError(data.error);
+      } else if (data.customer) {
+        login(data.customer);
+        toast.success("Bem-vindo à Smoke Bebidas!");
+        navigate("/");
       }
-      window.location.href = "/";
     } catch (err) {
-      setError(err.message || "Invalid verification code");
+      setError(err.response?.data?.error || "Erro ao cadastrar");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResend = async () => {
-    setError("");
-    try {
-      await base44.auth.resendOtp(email);
-      toast({
-        title: "Code sent",
-        description: "Check your email for the new code.",
-      });
-    } catch (err) {
-      setError(err.message || "Failed to resend code");
-    }
-  };
-
-  const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", "/");
-  };
-
-  if (showOtp) {
+  if (step === "name") {
     return (
       <AuthLayout
-        icon={Mail}
-        title="Verify your email"
-        subtitle={`We sent a code to ${email}`}
+        icon={User}
+        title="Como podemos te chamar?"
+        subtitle={`Celular: ${phone}`}
+        footer={
+          <button onClick={() => setStep("phone")} className="text-primary font-medium hover:underline">
+            Voltar
+          </button>
+        }
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
             {error}
           </div>
         )}
-        <div className="flex justify-center mb-6">
-          <InputOTP
-            maxLength={6}
-            value={otpCode}
-            onChange={setOtpCode}
-            autoFocus
-            autoComplete="one-time-code"
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
-        </div>
-        <Button
-          className="w-full h-12 font-medium"
-          onClick={handleVerify}
-          disabled={loading || otpCode.length < 6}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Verifying...
-            </>
-          ) : (
-            "Verify"
-          )}
-        </Button>
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
-            Resend
-          </button>
-        </p>
+        <form onSubmit={handleNameSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nome completo</Label>
+            <Input
+              id="name"
+              autoFocus
+              placeholder="Seu nome"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-12"
+              required
+            />
+          </div>
+          <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Entrando...
+              </>
+            ) : (
+              "Entrar na loja"
+            )}
+          </Button>
+        </form>
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout
-      icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up to get started"
+      icon={Smartphone}
+      title="Entrar na loja"
+      subtitle="Digite seu celular para continuar"
       footer={
         <>
-          Already have an account?{" "}
+          É administrador?{" "}
           <Link to="/login" className="text-primary font-medium hover:underline">
-            Log in
+            Fazer login
           </Link>
         </>
       }
     >
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
-        onClick={handleGoogle}
-      >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
-
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
-        </div>
-      </div>
-
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
         </div>
       )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handlePhoneSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="phone">Celular</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              id="email"
-              type="email"
-              autoComplete="email"
+              id="phone"
+              type="tel"
               autoFocus
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="confirm"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="(51) 99999-9999"
+              value={phone}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
               className="pl-10 h-12"
               required
             />
@@ -216,10 +173,10 @@ export default function Register() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
+              Verificando...
             </>
           ) : (
-            "Create account"
+            "Continuar"
           )}
         </Button>
       </form>

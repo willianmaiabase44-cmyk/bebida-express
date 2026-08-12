@@ -7,7 +7,9 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import CustomerRoute from '@/components/CustomerRoute';
 import { CartProvider } from '@/context/CartContext';
+import { CustomerProvider } from '@/context/CustomerContext';
 
 // Public pages
 import Store from '@/pages/Store';
@@ -68,8 +70,8 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Customer routes - protected */}
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+      {/* Customer routes - requires customer phone session */}
+      <Route element={<CustomerRoute />}>
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/minha-conta" element={<MyAccount />} />
         <Route path="/pedido/:id" element={<OrderConfirmation />} />
@@ -102,11 +104,13 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <CartProvider>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-          <SonnerToaster position="top-center" theme="dark" />
+          <CustomerProvider>
+            <Router>
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+            <SonnerToaster position="top-center" theme="dark" />
+          </CustomerProvider>
         </CartProvider>
       </QueryClientProvider>
     </AuthProvider>

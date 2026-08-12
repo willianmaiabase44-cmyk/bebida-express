@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/constants";
+import { useCustomer } from "@/context/CustomerContext";
 import { CheckCircle2, Package, MapPin, Truck, Home, ShoppingBag } from "lucide-react";
 
 const STATUS_LABELS = {
@@ -15,17 +16,21 @@ export default function OrderConfirmation() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { customer } = useCustomer();
   const [order, setOrder] = useState(location.state?.order || null);
   const [loading, setLoading] = useState(!order);
 
   useEffect(() => {
-    if (!order && id) {
-      base44.entities.Order.get(id)
-        .then(data => setOrder(data))
+    if (!order && id && customer) {
+      base44.functions.invoke("getCustomerOrders", { customer_id: customer.id, order_id: id })
+        .then(res => {
+          if (res.data?.order) setOrder(res.data.order);
+          else navigate("/");
+        })
         .catch(() => navigate("/"))
         .finally(() => setLoading(false));
     }
-  }, [id]);
+  }, [id, customer]);
 
   if (loading) return <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   if (!order) return null;

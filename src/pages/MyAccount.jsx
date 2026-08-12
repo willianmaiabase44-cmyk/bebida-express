@@ -3,15 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/constants";
-import { User, MapPin, Package, Plus, Pencil, Trash2, Phone, Mail, Loader2, ShoppingBag, ArrowLeft } from "lucide-react";
+import { User, MapPin, Package, Plus, Pencil, Trash2, Phone, Loader2, ShoppingBag, ArrowLeft } from "lucide-react";
 import AddressForm from "@/components/checkout/AddressForm";
+import { useCustomer } from "@/context/CustomerContext";
 
 const STATUS_CONFIG = {
   novo: { label: "Novo", color: "bg-blue-500/15 text-blue-400" },
@@ -27,25 +26,22 @@ const PAYMENT_LABELS = { dinheiro: "Dinheiro", pix: "PIX", cartao_entrega: "Cart
 
 export default function MyAccount() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { customer, logout } = useCustomer();
   const [addresses, setAddresses] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editAddress, setEditAddress] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [phone, setPhone] = useState("");
 
   const load = async () => {
+    if (!customer) return;
     try {
-      const me = await base44.auth.me();
-      setUser(me);
-      setPhone(me.data?.phone || "");
-      const [addrList, orderList] = await Promise.all([
-        base44.entities.CustomerAddress.list("-created_date"),
-        base44.entities.Order.list("-created_date", 50),
+      const [addrRes, ordersRes] = await Promise.all([
+        base44.functions.invoke("manageCustomerAddress", { action: "list", customer_id: customer.id }),
+        base44.functions.invoke("getCustomerOrders", { customer_id: customer.id }),
       ]);
-      setAddresses(addrList || []);
-      setOrders(orderList || []);
+      setAddresses(addrRes.data?.addresses || []);
+      setOrders(ordersRes.data?.orders || []);
     } catch (e) {
       toast.error("Erro ao carregar dados");
     } finally {
@@ -53,24 +49,23 @@ export default function MyAccount() {
     }
   };
 
-  useEffect(() => { load(); }, []);
-
-  const savePhone = async () => {
-    try {
-      await base44.auth.updateMe({ phone });
-      toast.success("Celular atualizado!");
-      load();
-    } catch {
-      toast.error("Erro ao atualizar");
-    }
-  };
+  useEffect(() => { load(); }, [customer]);
 
   const handleSaveAddress = async (formData) => {
     try {
       if (editAddress?.id) {
-        await base44.entities.CustomerAddress.update(editAddress.id, formData);
+        await base44.functions.invoke("manageCustomerAddress", {
+          action: "update",
+          customer_id: customer.id,
+          address_id: editAddress.id,
+          address: formData,
+        });
       } else {
-        await base44.entities.CustomerAddress.create(formData);
+        await base44.functions.invoke("manageCustomerAddress", {
+          action: "create",
+          customer_id: customer.id,
+          address: formData,
+        });
       }
       toast.success(editAddress?.id ? "Endereço atualizado!" : "Endereço adicionado!");
       setDialogOpen(false);
@@ -84,12 +79,21 @@ export default function MyAccount() {
   const handleDeleteAddress = async (id) => {
     if (!confirm("Excluir este endereço?")) return;
     try {
-      await base44.entities.CustomerAddress.delete(id);
+      await base44.functions.invoke("manageCustomerAddress", {
+        action: "delete",
+        customer_id: customer.id,
+        address_id: id,
+      });
       toast.success("Endereço excluído");
       load();
     } catch {
       toast.error("Erro ao excluir");
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
   };
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -99,7 +103,7 @@ export default function MyAccount() {
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
         <h1 className="font-heading text-2xl font-bold">Minha Conta</h1>
-        <Button variant="ghost" size="sm" className="ml-auto text-muted-foreground" onClick={() => base44.auth.logout("/")}>Sair</Button>
+        <Button variant="ghost" size="sm" className="ml-auto text-muted-foreground" onClick={handleLogout}>Sair</Button>
       </div>
 
       <Tabs defaultValue="orders">
@@ -109,7 +113,6 @@ export default function MyAccount() {
           <TabsTrigger value="addresses" className="gap-1.5"><MapPin className="w-4 h-4" /> Endereços</TabsTrigger>
         </TabsList>
 
-        {/* Pedidos */}
         <TabsContent value="orders" className="space-y-3 mt-4">
           {orders.length === 0 ? (
             <Card className="bg-card border-border"><CardContent className="py-12 text-center text-muted-foreground">
@@ -153,29 +156,22 @@ export default function MyAccount() {
           )}
         </TabsContent>
 
-        {/* Dados */}
         <TabsContent value="profile" className="space-y-4 mt-4">
           <Card className="bg-card border-border">
             <CardHeader><CardTitle className="text-base">Dados Pessoais</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <Label>Nome</Label>
-                <Input value={user?.full_name || ""} disabled className="bg-secondary/30" />
+                <p className="text-sm text-muted-foreground mb-1">Nome</p>
+                <p className="font-medium">{customer?.name || "—"}</p>
               </div>
               <div>
-                <Label>Email</Label>
-                <Input value={user?.email || ""} disabled className="bg-secondary/30" />
+                <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> Celular</p>
+                <p className="font-medium">{customer?.phone || "—"}</p>
               </div>
-              <div>
-                <Label className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> Celular</Label>
-                <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(11) 99999-9999" />
-              </div>
-              <Button onClick={savePhone} className="gap-2">Salvar celular</Button>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Endereços */}
         <TabsContent value="addresses" className="space-y-3 mt-4">
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditAddress(null); }}>
             <DialogTrigger asChild>
