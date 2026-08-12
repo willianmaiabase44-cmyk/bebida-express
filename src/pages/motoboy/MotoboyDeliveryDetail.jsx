@@ -60,14 +60,52 @@ export default function MotoboyDeliveryDetail() {
         ? { lat: order.address_lat, lng: order.address_lng, address: order.address?.full || '' }
         : { address: order.address?.full || order.address };
       base44.functions.invoke('getDeliveryRoute', payload)
-        .then(res => {
+        .then(async res => {
           if (res.data?.error) {
-            toast.error(res.data.error);
+            // Fallback: busca settings da loja e monta rota mínima com linha reta
+            try {
+              const settingsRes = await base44.entities.StoreSettings.list();
+              const s = settingsRes?.[0];
+              if (s?.lat != null && s.lng != null && order.address_lat != null && order.address_lng != null) {
+                setRoute({
+                  store_lat: s.lat,
+                  store_lon: s.lng,
+                  client_lat: order.address_lat,
+                  client_lon: order.address_lng,
+                  client_address: order.address?.full || '',
+                  route_geometry: [[s.lat, s.lng], [order.address_lat, order.address_lng]],
+                  distance: 0,
+                  duration: 0,
+                });
+              } else {
+                toast.error(res.data.error);
+              }
+            } catch {
+              toast.error(res.data.error);
+            }
           } else {
             setRoute(res.data);
           }
         })
-        .catch(() => toast.error('Erro ao carregar rota'))
+        .catch(async () => {
+          // Fallback em caso de erro total na função
+          try {
+            const settingsRes = await base44.entities.StoreSettings.list();
+            const s = settingsRes?.[0];
+            if (s?.lat != null && s.lng != null && order.address_lat != null && order.address_lng != null) {
+              setRoute({
+                store_lat: s.lat,
+                store_lon: s.lng,
+                client_lat: order.address_lat,
+                client_lon: order.address_lng,
+                client_address: order.address?.full || '',
+                route_geometry: [[s.lat, s.lng], [order.address_lat, order.address_lng]],
+                distance: 0,
+                duration: 0,
+              });
+            }
+          } catch {}
+        })
         .finally(() => setRouteLoading(false));
     }
   }, [order]);
