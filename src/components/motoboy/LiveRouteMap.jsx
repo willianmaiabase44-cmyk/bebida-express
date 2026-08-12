@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, Crosshair } from 'lucide-react';
+import { Navigation, Crosshair, Play, Square } from 'lucide-react';
 
 const makeIcon = (color, label) => L.divIcon({
   html: `<div style="background:${color};width:30px;height:30px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:bold;font-family:sans-serif;">${label}</div>`,
@@ -31,13 +31,13 @@ function FitBounds({ bounds }) {
   return null;
 }
 
-function RecenterOnMoto({ position, follow }) {
+function RecenterOnMoto({ position, follow, zoom = 16 }) {
   const map = useMap();
   useEffect(() => {
     if (follow && position) {
-      map.setView(position, 16, { animate: true });
+      map.setView(position, zoom, { animate: true });
     }
-  }, [position, follow]);
+  }, [position, follow, zoom]);
   return null;
 }
 
@@ -48,6 +48,7 @@ export default function LiveRouteMap({ storeCoords, clientCoords, routeGeometry,
   const [gpsError, setGpsError] = useState(null);
   const [motoRoute, setMotoRoute] = useState(null);
   const [motoRouteInfo, setMotoRouteInfo] = useState(null);
+  const [navigating, setNavigating] = useState(false);
   const watchIdRef = useRef(null);
   const lastPosRef = useRef(null);
   const lastFetchRef = useRef({ pos: null, time: 0 });
@@ -129,16 +130,33 @@ export default function LiveRouteMap({ storeCoords, clientCoords, routeGeometry,
     className: '',
   });
 
+  const startNav = () => {
+    setNavigating(true);
+    setFollowing(true);
+  };
+  const stopNav = () => {
+    setNavigating(false);
+  };
+
   return (
-    <div className="relative" style={{ height, width: '100%' }}>
-      <div className="rounded-lg overflow-hidden border border-border" style={{ height: '100%', width: '100%' }}>
+    <div className="relative" style={{ height: navigating ? '60vh' : height, width: '100%' }}>
+      <div
+        className="rounded-lg overflow-hidden border border-border"
+        style={{
+          height: '100%',
+          width: '100%',
+          transform: navigating ? 'perspective(900px) rotateX(48deg) scale(1.08)' : 'none',
+          transformOrigin: 'center bottom',
+          transition: 'transform 0.6s ease',
+        }}
+      >
         <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; OpenStreetMap'
           />
-          <FitBounds bounds={bounds} />
-          <RecenterOnMoto position={motoPos} follow={following} />
+          <FitBounds bounds={navigating ? null : bounds} />
+          <RecenterOnMoto position={motoPos} follow={navigating || following} zoom={navigating ? 18 : 16} />
           {storeCoords && (
             <Marker position={storeCoords} icon={storeIcon}>
               <Popup><b>Smoke Bebidas (Loja)</b></Popup>
@@ -169,6 +187,23 @@ export default function LiveRouteMap({ storeCoords, clientCoords, routeGeometry,
           <Navigation className="w-3.5 h-3.5" />
           {motoRouteInfo.distance} km • {motoRouteInfo.duration} min até o cliente
         </div>
+      )}
+
+      {/* Botão Iniciar/Encerrar Rota */}
+      {!navigating ? (
+        <button
+          onClick={startNav}
+          className="absolute bottom-3 left-3 z-[1000] flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-4 py-2.5 rounded-lg shadow-lg"
+        >
+          <Play className="w-4 h-4" /> Iniciar Rota
+        </button>
+      ) : (
+        <button
+          onClick={stopNav}
+          className="absolute bottom-3 left-3 z-[1000] flex items-center gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground text-sm font-bold px-4 py-2.5 rounded-lg shadow-lg"
+        >
+          <Square className="w-4 h-4" /> Encerrar
+        </button>
       )}
 
       {/* Botão seguir localização */}
