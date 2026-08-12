@@ -1,32 +1,19 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
-import { formatPrice, WHATSAPP_NUMBER } from '@/lib/constants';
-import { Minus, Plus, Trash2, MessageCircle, ShoppingBag } from 'lucide-react';
+import { formatPrice } from '@/lib/constants';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 
 export default function CartDrawer({ open, onClose }) {
-  const { items, updateQuantity, removeItem, clearCart, total } = useCart();
+  const { items, updateQuantity, removeItem, total } = useCart();
+  const navigate = useNavigate();
 
-  const sendWhatsApp = () => {
+  const goCheckout = () => {
     if (items.length === 0) return;
-    let message = 'Olá, gostaria de fazer o seguinte pedido:\n\n';
-    items.forEach(item => {
-      if (item.isKit && item.kitItems) {
-        message += `📦 *${item.name}*\n`;
-        item.kitItems.forEach(ki => {
-          message += `   - ${ki.quantity}x ${ki.name}\n`;
-        });
-        message += `   Subtotal: ${formatPrice(item.price * item.quantity)}\n\n`;
-      } else {
-        message += `- ${item.quantity}x ${item.name} — ${formatPrice(item.price * item.quantity)}\n`;
-      }
-    });
-    message += `\n*Total: ${formatPrice(total)}*`;
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-    clearCart();
     onClose();
+    navigate('/checkout');
   };
 
   return (
@@ -86,9 +73,9 @@ export default function CartDrawer({ open, onClose }) {
                 <span className="text-muted-foreground">Total</span>
                 <span className="font-heading font-bold text-2xl text-primary">{formatPrice(total)}</span>
               </div>
-              <Button onClick={sendWhatsApp} className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl gap-2">
-                <MessageCircle className="w-5 h-5" />
-                Enviar pedido via WhatsApp
+              <Button onClick={goCheckout} className="w-full h-12 font-semibold rounded-xl gap-2">
+                <ArrowRight className="w-5 h-5" />
+                Finalizar Pedido
               </Button>
             </div>
           </>

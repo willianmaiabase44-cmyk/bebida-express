@@ -12,6 +12,11 @@ import { CartProvider } from '@/context/CartContext';
 // Public pages
 import Store from '@/pages/Store';
 
+// Customer pages
+import Checkout from '@/pages/Checkout';
+import MyAccount from '@/pages/MyAccount';
+import OrderConfirmation from '@/pages/OrderConfirmation';
+
 // Auth pages
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -29,6 +34,8 @@ import QuickUpdate from '@/pages/admin/QuickUpdate';
 import POS from '@/pages/admin/POS';
 import Motoboys from '@/pages/admin/Motoboys';
 import Deliveries from '@/pages/admin/Deliveries';
+import Orders from '@/pages/admin/Orders';
+import DeliverySettings from '@/pages/admin/DeliverySettings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -61,14 +68,23 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
+      {/* Customer routes - protected */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/minha-conta" element={<MyAccount />} />
+        <Route path="/pedido/:id" element={<OrderConfirmation />} />
+      </Route>
+
       {/* Admin routes - protected */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<Dashboard />} />
+          <Route path="/admin/orders" element={<Orders />} />
           <Route path="/admin/products" element={<Products />} />
           <Route path="/admin/stock" element={<StockManagement />} />
           <Route path="/admin/promotions" element={<Promotions />} />
           <Route path="/admin/pos" element={<POS />} />
+          <Route path="/admin/delivery-settings" element={<DeliverySettings />} />
           <Route path="/admin/motoboys" element={<Motoboys />} />
           <Route path="/admin/deliveries" element={<Deliveries />} />
           <Route path="/admin/quick-update" element={<QuickUpdate />} />

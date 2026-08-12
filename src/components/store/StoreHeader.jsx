@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Search, Menu, X } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCart } from '@/context/CartContext';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,11 @@ export default function StoreHeader({ searchQuery, onSearchChange, activeCategor
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
+            <Link to="/minha-conta">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <User className="w-5 h-5" />
+              </Button>
+            </Link>
             <Button variant="ghost" size="icon" className="relative" onClick={onCartOpen}>
               <ShoppingCart className="w-5 h-5" />
               {itemCount > 0 && (

@@ -1,0 +1,224 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_number": {
+      "type": "number",
+      "description": "N\u00famero sequencial do pedido"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "customer_phone": {
+      "type": "string",
+      "description": "Celular do cliente"
+    },
+    "customer_email": {
+      "type": "string",
+      "description": "Email do cliente"
+    },
+    "address": {
+      "type": "object",
+      "description": "Snapshot do endere\u00e7o de entrega",
+      "properties": {
+        "cep": {
+          "type": "string"
+        },
+        "street": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "complement": {
+          "type": "string"
+        },
+        "district": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "full": {
+          "type": "string"
+        }
+      }
+    },
+    "address_lat": {
+      "type": "number",
+      "description": "Latitude do endere\u00e7o de entrega"
+    },
+    "address_lng": {
+      "type": "number",
+      "description": "Longitude do endere\u00e7o de entrega"
+    },
+    "items": {
+      "type": "array",
+      "description": "Itens do pedido",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "is_kit": {
+            "type": "boolean"
+          },
+          "kit_items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number",
+      "description": "Subtotal dos produtos"
+    },
+    "distance_km": {
+      "type": "number",
+      "description": "Dist\u00e2ncia da rota em KM"
+    },
+    "freight_per_km": {
+      "type": "number",
+      "description": "Valor por KM aplicado"
+    },
+    "freight": {
+      "type": "number",
+      "default": 0,
+      "description": "Valor do frete"
+    },
+    "discount": {
+      "type": "number",
+      "default": 0,
+      "description": "Desconto aplicado"
+    },
+    "total": {
+      "type": "number",
+      "description": "Valor total do pedido"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "dinheiro",
+        "pix",
+        "cartao_entrega"
+      ],
+      "description": "Forma de pagamento"
+    },
+    "change_for": {
+      "type": "number",
+      "description": "Troco para (quando pagamento em dinheiro)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "novo",
+        "confirmado",
+        "em_preparacao",
+        "pronto",
+        "saiu_para_entrega",
+        "entregue",
+        "cancelado"
+      ],
+      "default": "novo",
+      "description": "Status do pedido"
+    },
+    "motoboy_id": {
+      "type": "string",
+      "description": "ID do motoboy designado"
+    },
+    "motoboy_name": {
+      "type": "string",
+      "description": "Nome do motoboy designado"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "online",
+        "pdv"
+      ],
+      "default": "online",
+      "description": "Canal do pedido"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es do cliente"
+    },
+    "status_history": {
+      "type": "array",
+      "description": "Hist\u00f3rico de altera\u00e7\u00f5es de status",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "by": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do pedido"
+    }
+  },
+  "required": [
+    "customer_name",
+    "customer_phone",
+    "address",
+    "items",
+    "subtotal",
+    "total",
+    "payment_method",
+    "date"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ArrowLeftRight, Tag, BarChart3, LogOut, Menu, X, Store, Zap, ShoppingCart, Bike, MapPin } from 'lucide-react';
+import { LayoutDashboard, Package, ArrowLeftRight, Tag, BarChart3, LogOut, Menu, X, Store, Zap, ShoppingCart, Bike, MapPin, ClipboardList, Settings } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 
 const NAV_ITEMS = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/admin/orders', icon: ClipboardList, label: 'Pedidos Online' },
   { path: '/admin/pos', icon: ShoppingCart, label: 'PDV — Caixa' },
   { path: '/admin/quick-update', icon: Zap, label: 'Atualização Rápida' },
   { path: '/admin/products', icon: Package, label: 'Produtos' },
   { path: '/admin/stock', icon: ArrowLeftRight, label: 'Estoque' },
   { path: '/admin/promotions', icon: Tag, label: 'Promoções' },
+  { path: '/admin/delivery-settings', icon: Settings, label: 'Config. de Entrega' },
   { path: '/admin/motoboys', icon: Bike, label: 'Motoboys' },
   { path: '/admin/deliveries', icon: MapPin, label: 'Entregas' },
   { path: '/admin/reports', icon: BarChart3, label: 'Relatórios' },

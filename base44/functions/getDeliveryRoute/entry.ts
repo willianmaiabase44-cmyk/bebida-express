@@ -1,59 +1,42 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { calculateRoute } from "../../shared/geo.ts";
 
-// Coordenadas da loja (Smoke Bebidas) — altere para o endereço real
-const STORE_LAT = -23.5505;
-const STORE_LON = -46.6333;
-
-export default async function(req) {
+export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const address = body?.address;
-    if (!address) return Response.json({ error: 'Endereço é obrigatório' }, { status: 400 });
+    if (!address) return Response.json({ error: "Endereço é obrigatório" }, { status: 400 });
 
-    // 1. Geocodificar endereço do cliente via Nominatim (OpenStreetMap)
-    const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Brasil')}&limit=1`;
-    const geoRes = await fetch(geoUrl, {
-      headers: { 'User-Agent': 'SmokeBebidas/1.0' }
-    });
-    const geoData = await geoRes.json();
-
-    if (!geoData || geoData.length === 0) {
-      return Response.json({ error: 'Endereço não encontrado. Verifique e tente novamente.' }, { status: 404 });
+    // Busca endereço da loja nas configurações (não mais hardcoded)
+    const settingsList = await base44.asServiceRole.entities.StoreSettings.list();
+    const settings = settingsList?.[0];
+    if (!settings || settings.lat == null || settings.lng == null) {
+      return Response.json({ error: "Endereço da loja não configurado" }, { status: 503 });
     }
 
-    const clientLat = parseFloat(geoData[0].lat);
-    const clientLon = parseFloat(geoData[0].lon);
-    const displayName = geoData[0].display_name;
+    const STORE_LAT = settings.lat;
+    const STORE_LON = settings.lng;
 
-    // 2. Calcular rota da loja até o cliente via OSRM
-    const routeUrl = `https://router.project-osrm.org/route/v1/driving/${STORE_LON},${STORE_LAT};${clientLon},${clientLat}?overview=full&geometries=geojson`;
-    const routeRes = await fetch(routeUrl);
-    const routeData = await routeRes.json();
+    // Geocodificar endereço do cliente
+    const { geocodeAddress } = await import("../../shared/geo.ts");
+    const geo = await geocodeAddress(address);
+    if (!geo) return Response.json({ error: "Endereço não encontrado" }, { status: 404 });
 
-    let routeGeometry = [[STORE_LAT, STORE_LON], [clientLat, clientLon]];
-    let distance = 0;
-    let duration = 0;
-
-    if (routeData?.routes?.length > 0) {
-      const route = routeData.routes[0];
-      routeGeometry = route.geometry.coordinates.map(c => [c[1], c[0]]); // [lon,lat] -> [lat,lon]
-      distance = route.distance;
-      duration = route.duration;
-    }
+    const route = await calculateRoute(STORE_LAT, STORE_LON, geo.lat, geo.lng);
 
     return Response.json({
       store_lat: STORE_LAT,
       store_lon: STORE_LON,
-      client_lat: clientLat,
-      client_lon: clientLon,
-      client_address: displayName,
-      route_geometry: routeGeometry,
-      distance,
-      duration
+      client_lat: geo.lat,
+      client_lon: geo.lng,
+      client_address: geo.display_name,
+      route_geometry: route.geometry,
+      distance: route.distance,
+      duration: route.duration,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

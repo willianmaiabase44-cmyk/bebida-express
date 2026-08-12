@@ -1,0 +1,83 @@
+{
+  "name": "StoreSettings",
+  "type": "object",
+  "properties": {
+    "store_name": {
+      "type": "string",
+      "description": "Nome do estabelecimento",
+      "default": "Smoke Bebidas"
+    },
+    "cep": {
+      "type": "string",
+      "description": "CEP da loja"
+    },
+    "street": {
+      "type": "string",
+      "description": "Rua/Logradouro da loja"
+    },
+    "number": {
+      "type": "string",
+      "description": "N\u00famero do endere\u00e7o da loja"
+    },
+    "complement": {
+      "type": "string",
+      "description": "Complemento do endere\u00e7o da loja"
+    },
+    "district": {
+      "type": "string",
+      "description": "Bairro da loja"
+    },
+    "city": {
+      "type": "string",
+      "description": "Cidade da loja"
+    },
+    "state": {
+      "type": "string",
+      "description": "Estado (UF) da loja"
+    },
+    "lat": {
+      "type": "number",
+      "description": "Latitude da loja"
+    },
+    "lng": {
+      "type": "number",
+      "description": "Longitude da loja"
+    },
+    "freight_per_km": {
+      "type": "number",
+      "default": 2.5,
+      "description": "Valor do frete por KM rodado"
+    },
+    "min_freight": {
+      "type": "number",
+      "default": 0,
+      "description": "Valor m\u00ednimo do frete (se 0, sem m\u00ednimo)"
+    },
+    "delivery_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Entregas habilitadas"
+    }
+  },
+  "required": [
+    "store_name"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

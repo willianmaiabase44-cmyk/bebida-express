@@ -1,0 +1,73 @@
+{
+  "name": "CustomerAddress",
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "description": "Apelido do endere\u00e7o (Casa, Trabalho...)",
+      "default": "Casa"
+    },
+    "cep": {
+      "type": "string",
+      "description": "CEP do cliente"
+    },
+    "street": {
+      "type": "string",
+      "description": "Rua/Logradouro"
+    },
+    "number": {
+      "type": "string",
+      "description": "N\u00famero"
+    },
+    "complement": {
+      "type": "string",
+      "description": "Complemento"
+    },
+    "district": {
+      "type": "string",
+      "description": "Bairro"
+    },
+    "city": {
+      "type": "string",
+      "description": "Cidade"
+    },
+    "state": {
+      "type": "string",
+      "description": "Estado (UF)"
+    },
+    "reference": {
+      "type": "string",
+      "description": "Ponto de refer\u00eancia"
+    },
+    "lat": {
+      "type": "number",
+      "description": "Latitude do endere\u00e7o"
+    },
+    "lng": {
+      "type": "number",
+      "description": "Longitude do endere\u00e7o"
+    }
+  },
+  "required": [
+    "cep",
+    "street",
+    "number",
+    "district",
+    "city",
+    "state"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
