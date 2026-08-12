@@ -31,7 +31,7 @@ export default function AdminLayout() {
         <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
           <Menu className="w-5 h-5" />
         </Button>
-        <h1 className="font-heading font-bold">Painel Admin</h1>
+        <h1 className="font-heading font-bold text-sm">Smoke Admin</h1>
         <Link to="/">
           <Store className="w-5 h-5 text-muted-foreground" />
         </Link>
@@ -46,10 +46,12 @@ export default function AdminLayout() {
       <aside className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between h-16 px-5 border-b border-border">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-heading font-bold">B</span>
-            </div>
-            <span className="font-heading font-bold">Beba<span className="text-primary">+</span> Admin</span>
+            <img
+              src="https://media.base44.com/images/public/6a196352fac9a14d99de4405/0bcaa04b8_generated_image.png"
+              alt="Smoke Bebidas"
+              className="h-8 w-auto object-contain"
+            />
+            <span className="font-heading font-bold text-sm">Admin</span>
           </div>
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
             <X className="w-4 h-4" />

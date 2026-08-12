@@ -16,12 +16,11 @@ export default function StoreHeader({ searchQuery, onSearchChange, activeCategor
         {/* Top bar */}
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-heading font-bold text-lg">B</span>
-            </div>
-            <h1 className="font-heading font-bold text-lg sm:text-xl tracking-tight">
-              Beba<span className="text-primary">+</span>
-            </h1>
+            <img
+              src="https://media.base44.com/images/public/6a196352fac9a14d99de4405/0bcaa04b8_generated_image.png"
+              alt="Smoke Bebidas"
+              className="h-10 w-auto object-contain"
+            />
           </div>
 
           <div className="hidden md:flex flex-1 max-w-md mx-8">
