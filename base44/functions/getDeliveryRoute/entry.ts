@@ -9,7 +9,9 @@ export default async function (req) {
 
     const body = await req.json();
     const address = body?.address;
-    if (!address) return Response.json({ error: "Endereço é obrigatório" }, { status: 400 });
+    const lat = body?.lat;
+    const lng = body?.lng;
+    if (!address && (lat == null || lng == null)) return Response.json({ error: "Endereço é obrigatório" }, { status: 400 });
 
     // Busca endereço da loja nas configurações (não mais hardcoded)
     const settingsList = await base44.asServiceRole.entities.StoreSettings.list();
@@ -21,19 +23,29 @@ export default async function (req) {
     const STORE_LAT = settings.lat;
     const STORE_LON = settings.lng;
 
-    // Geocodificar endereço do cliente
-    const { geocodeAddress } = await import("../../shared/geo.ts");
-    const geo = await geocodeAddress(address);
-    if (!geo) return Response.json({ error: "Endereço não encontrado" }, { status: 404 });
+    // Usar coordenadas já salvas no pedido, ou geocodificar o endereço
+    let clientLat, clientLon, clientAddress;
+    if (lat != null && lng != null) {
+      clientLat = lat;
+      clientLon = lng;
+      clientAddress = address || "";
+    } else {
+      const { geocodeAddress } = await import("../../shared/geo.ts");
+      const geo = await geocodeAddress(address);
+      if (!geo) return Response.json({ error: "Endereço não encontrado" }, { status: 404 });
+      clientLat = geo.lat;
+      clientLon = geo.lng;
+      clientAddress = geo.display_name;
+    }
 
-    const route = await calculateRoute(STORE_LAT, STORE_LON, geo.lat, geo.lng);
+    const route = await calculateRoute(STORE_LAT, STORE_LON, clientLat, clientLon);
 
     return Response.json({
       store_lat: STORE_LAT,
       store_lon: STORE_LON,
-      client_lat: geo.lat,
-      client_lon: geo.lng,
-      client_address: geo.display_name,
+      client_lat: clientLat,
+      client_lon: clientLon,
+      client_address: clientAddress,
       route_geometry: route.geometry,
       distance: route.distance,
       duration: route.duration,

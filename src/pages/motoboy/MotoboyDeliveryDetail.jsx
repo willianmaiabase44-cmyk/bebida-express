@@ -56,7 +56,10 @@ export default function MotoboyDeliveryDetail() {
   useEffect(() => {
     if (order?.address && !route && !routeLoading) {
       setRouteLoading(true);
-      base44.functions.invoke('getDeliveryRoute', { address: order.address })
+      const payload = (order.address_lat != null && order.address_lng != null)
+        ? { lat: order.address_lat, lng: order.address_lng, address: order.address?.full || '' }
+        : { address: order.address?.full || order.address };
+      base44.functions.invoke('getDeliveryRoute', payload)
         .then(res => {
           if (res.data?.error) {
             toast.error(res.data.error);
