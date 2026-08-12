@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Package, ArrowLeftRight, Tag, BarChart3, LogOut, Menu, X, Store, Zap, ShoppingCart, Bike, MapPin, ClipboardList, Settings } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { formatPrice } from '@/lib/constants';
 
 const NAV_ITEMS = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -22,6 +24,28 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const knownOrderIds = useRef(new Set());
+
+  useEffect(() => {
+    // Carrega pedidos existentes para não disparar notificação no carregamento inicial
+    base44.entities.Order.list('-created_date', 50).then(orders => {
+      orders.forEach(o => knownOrderIds.current.add(o.id));
+    }).catch(() => {});
+
+    const unsubscribe = base44.entities.Order.subscribe((event) => {
+      if (event.type === 'create' && event.data && !knownOrderIds.current.has(event.data.id)) {
+        knownOrderIds.current.add(event.data.id);
+        const o = event.data;
+        toast.success('Novo pedido recebido!', {
+          description: `#${o.order_number || ''} — ${o.customer_name || 'Cliente'} • ${formatPrice(o.total)}`,
+          action: { label: 'Ver', onClick: () => window.location.href = '/admin/orders' },
+          duration: 8000,
+        });
+      }
+    });
+
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
 
   const handleLogout = () => {
     base44.auth.logout('/');

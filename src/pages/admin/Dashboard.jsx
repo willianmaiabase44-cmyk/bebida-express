@@ -2,9 +2,10 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, AlertTriangle, Tag, ArrowLeftRight, TrendingUp } from 'lucide-react';
+import { Package, AlertTriangle, Tag, ArrowLeftRight, TrendingUp, ClipboardList } from 'lucide-react';
 import { formatPrice } from '@/lib/constants';
 import { Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { data: products = [], isLoading: loadingP } = useQuery({
@@ -22,6 +23,12 @@ export default function Dashboard() {
     queryFn: () => base44.entities.StockMovement.list('-created_date', 500),
   });
 
+  const { data: recentOrders = [] } = useQuery({
+    queryKey: ['admin-recent-orders'],
+    queryFn: () => base44.entities.Order.list('-created_date', 5),
+    refetchInterval: 15000,
+  });
+
   const now = new Date().toISOString().split('T')[0];
   const activePromos = promotions.filter(p => p.start_date <= now && p.end_date >= now);
   const lowStock = products.filter(p => (p.stock ?? 0) <= (p.min_stock || 5) && p.active !== false);
@@ -31,11 +38,13 @@ export default function Dashboard() {
     return <div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
 
+  const newOrdersCount = recentOrders.filter(o => o.status === 'novo').length;
+
   const stats = [
     { label: 'Total de Produtos', value: products.length, icon: Package, color: 'text-blue-400' },
     { label: 'Estoque Baixo', value: lowStock.length, icon: AlertTriangle, color: 'text-amber-400' },
     { label: 'Promoções Ativas', value: activePromos.length, icon: Tag, color: 'text-primary' },
-    { label: 'Movimentações', value: movements.length, icon: ArrowLeftRight, color: 'text-green-400' },
+    { label: 'Pedidos Novos', value: newOrdersCount, icon: ClipboardList, color: 'text-orange-400' },
   ];
 
   return (
@@ -57,6 +66,36 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
+        {/* Pedidos Recentes */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-heading text-lg flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-orange-400" />
+                Pedidos Recentes
+              </span>
+              <Link to="/admin/orders" className="text-xs font-normal text-primary hover:underline">Ver todos</Link>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentOrders.map(o => (
+                <div key={o.id} className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-muted-foreground w-12">#{o.order_number || '—'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{o.customer_name || 'Cliente'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {o.items?.length || 0} {o.items?.length === 1 ? 'item' : 'itens'} • {o.payment_method || '—'}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-primary">{formatPrice(o.total)}</span>
+                </div>
+              ))}
+              {recentOrders.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum pedido ainda</p>}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Top Selling */}
         <Card className="bg-card border-border">
           <CardHeader className="pb-3">
