@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { MapPin, Save, Loader2, Truck, Navigation } from "lucide-react";
+import { MapPin, Save, Loader2, Truck, Navigation, MapPinCheck } from "lucide-react";
 import { formatPrice } from "@/lib/constants";
+import { lookupCep, formatCep } from "@/lib/cep";
 
 const UF_OPTIONS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
 
@@ -17,6 +18,14 @@ export default function DeliverySettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+
+  const [form, setForm] = useState({
+    store_name: "Smoke Bebidas",
+    cep: "", street: "", number: "", complement: "", district: "", city: "", state: "RS",
+    lat: null, lng: null, freight_per_km: 2.5, min_freight: 0, delivery_enabled: true,
+    delivery_city: "Gravataí", delivery_state: "RS",
+  });
 
   const load = async () => {
     try {
@@ -30,6 +39,45 @@ export default function DeliverySettings() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (settings) {
+      setForm({
+        store_name: settings.store_name || "Smoke Bebidas",
+        cep: settings.cep || "", street: settings.street || "", number: settings.number || "",
+        complement: settings.complement || "", district: settings.district || "",
+        city: settings.city || "", state: settings.state || "RS",
+        lat: settings.lat, lng: settings.lng,
+        freight_per_km: settings.freight_per_km ?? 2.5,
+        min_freight: settings.min_freight ?? 0,
+        delivery_enabled: settings.delivery_enabled ?? true,
+        delivery_city: settings.delivery_city || "Gravataí",
+        delivery_state: settings.delivery_state || "RS",
+      });
+    }
+  }, [settings]);
+
+  const handleCepBlur = async () => {
+    const cleanCep = form.cep.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    setCepLoading(true);
+    const data = await lookupCep(form.cep);
+    setCepLoading(false);
+    if (!data) {
+      toast.error("CEP não encontrado");
+      return;
+    }
+    setForm(f => ({
+      ...f,
+      cep: data.cep,
+      street: data.street || f.street,
+      district: data.district || f.district,
+      city: data.city || f.city,
+      state: data.state || f.state,
+      complement: data.complement || f.complement,
+    }));
+    toast.success("Endereço preenchido pelo CEP!");
+  };
 
   const handleGeocode = async () => {
     if (!form.street || !form.city || !form.state) {
@@ -56,27 +104,6 @@ export default function DeliverySettings() {
     }
   };
 
-  const [form, setForm] = useState({
-    store_name: "Smoke Bebidas",
-    cep: "", street: "", number: "", complement: "", district: "", city: "", state: "SP",
-    lat: null, lng: null, freight_per_km: 2.5, min_freight: 0, delivery_enabled: true,
-  });
-
-  useEffect(() => {
-    if (settings) {
-      setForm({
-        store_name: settings.store_name || "Smoke Bebidas",
-        cep: settings.cep || "", street: settings.street || "", number: settings.number || "",
-        complement: settings.complement || "", district: settings.district || "",
-        city: settings.city || "", state: settings.state || "SP",
-        lat: settings.lat, lng: settings.lng,
-        freight_per_km: settings.freight_per_km ?? 2.5,
-        min_freight: settings.min_freight ?? 0,
-        delivery_enabled: settings.delivery_enabled ?? true,
-      });
-    }
-  }, [settings]);
-
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -102,7 +129,7 @@ export default function DeliverySettings() {
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-bold">Configurações de Entrega</h1>
-        <p className="text-muted-foreground text-sm mt-1">Endereço da loja e cálculo de frete por KM</p>
+        <p className="text-muted-foreground text-sm mt-1">Endereço da loja, área de entrega e cálculo de frete por KM</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -113,34 +140,43 @@ export default function DeliverySettings() {
             <CardDescription>Ponto de partida de todas as entregas</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-1">
-                <Label>CEP</Label>
-                <Input value={form.cep} onChange={e => setForm(f => ({ ...f, cep: e.target.value }))} placeholder="00000-000" />
+            <div>
+              <Label>CEP</Label>
+              <div className="relative">
+                <Input
+                  value={form.cep}
+                  onChange={e => setForm(f => ({ ...f, cep: formatCep(e.target.value) }))}
+                  onBlur={handleCepBlur}
+                  placeholder="00000-000"
+                />
+                {cepLoading && <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">Digite o CEP e saia do campo para preencher automaticamente</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
                 <Label>Rua</Label>
-                <Input value={form.street} onChange={e => setForm(f => ({ ...f, street: e.target.value }))} placeholder="Av. Paulista" />
+                <Input value={form.street} onChange={e => setForm(f => ({ ...f, street: e.target.value }))} placeholder="Rua dos Pinheiros" />
+              </div>
+              <div>
+                <Label>Número</Label>
+                <Input value={form.number} onChange={e => setForm(f => ({ ...f, number: e.target.value }))} placeholder="100" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Número</Label>
-                <Input value={form.number} onChange={e => setForm(f => ({ ...f, number: e.target.value }))} placeholder="1000" />
-              </div>
               <div>
                 <Label>Complemento</Label>
                 <Input value={form.complement} onChange={e => setForm(f => ({ ...f, complement: e.target.value }))} placeholder="Sala 12" />
               </div>
-            </div>
-            <div>
-              <Label>Bairro</Label>
-              <Input value={form.district} onChange={e => setForm(f => ({ ...f, district: e.target.value }))} placeholder="Bela Vista" />
+              <div>
+                <Label>Bairro</Label>
+                <Input value={form.district} onChange={e => setForm(f => ({ ...f, district: e.target.value }))} placeholder="Centro" />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Cidade</Label>
-                <Input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="São Paulo" />
+                <Input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="Gravataí" />
               </div>
               <div>
                 <Label>Estado</Label>
@@ -163,8 +199,33 @@ export default function DeliverySettings() {
           </CardContent>
         </Card>
 
-        {/* Frete */}
+        {/* Frete + Área de entrega */}
         <div className="space-y-6">
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg"><MapPinCheck className="w-5 h-5 text-primary" /> Área de Entrega</CardTitle>
+              <CardDescription>Cidade onde a loja faz entregas</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Cidade de entrega</Label>
+                  <Input value={form.delivery_city} onChange={e => setForm(f => ({ ...f, delivery_city: e.target.value }))} placeholder="Gravataí" />
+                </div>
+                <div>
+                  <Label>Estado (UF)</Label>
+                  <Select value={form.delivery_state} onValueChange={v => setForm(f => ({ ...f, delivery_state: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{UF_OPTIONS.map(uf => <SelectItem key={uf} value={uf}>{uf}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-sm">
+                <p className="text-muted-foreground">Pedidos fora de <strong className="text-primary">{form.delivery_city || "Gravataí"}/{form.delivery_state || "RS"}</strong> serão recusados automaticamente.</p>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg"><Truck className="w-5 h-5 text-primary" /> Frete por KM</CardTitle>

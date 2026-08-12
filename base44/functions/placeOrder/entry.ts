@@ -49,6 +49,15 @@ export default async function (req) {
       return Response.json({ error: "Endereço de entrega obrigatório" }, { status: 400 });
     }
 
+    // Valida área de entrega (cidade/estado)
+    const deliveryCity = (settings.delivery_city || "").toLowerCase().replace(/\s+/g, "").trim();
+    const deliveryState = (settings.delivery_state || "").toUpperCase().trim();
+    const clientCity = (deliveryAddress.city || "").toLowerCase().replace(/\s+/g, "").trim();
+    const clientState = (deliveryAddress.state || "").toUpperCase().trim();
+    if (deliveryCity && deliveryState && (clientCity !== deliveryCity || clientState !== deliveryState)) {
+      return Response.json({ error: `Entregamos apenas em ${settings.delivery_city}/${settings.delivery_state}` }, { status: 403 });
+    }
+
     // 3. Calcula rota e frete (backend)
     const storeLat = settings.lat;
     const storeLng = settings.lng;

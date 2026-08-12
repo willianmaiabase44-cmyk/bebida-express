@@ -48,6 +48,15 @@ export default async function (req) {
     if (!settings) return Response.json({ error: "Loja ainda não configurou endereço de entrega. Entre em contato." }, { status: 503 });
     if (!settings.delivery_enabled) return Response.json({ error: "Entregas estão temporariamente desativadas." }, { status: 503 });
 
+    // Valida área de entrega (cidade/estado)
+    const deliveryCity = (settings.delivery_city || "").toLowerCase().trim();
+    const deliveryState = (settings.delivery_state || "").toUpperCase().trim();
+    const clientCity = (clientAddress.city || "").toLowerCase().replace(/\s+/g, "").trim();
+    const clientState = (clientAddress.state || "").toUpperCase().trim();
+    if (deliveryCity && deliveryState && (clientCity !== deliveryCity.replace(/\s+/g, "") || clientState !== deliveryState)) {
+      return Response.json({ error: `Entregamos apenas em ${settings.delivery_city}/${settings.delivery_state}` }, { status: 403 });
+    }
+
     const storeLat = settings.lat;
     const storeLng = settings.lng;
     if (storeLat == null || storeLng == null) {

@@ -51,12 +51,22 @@
     "min_freight": {
       "type": "number",
       "default": 0,
-      "description": "Valor m\u00ednimo do frete (se 0, sem m\u00ednimo)"
+      "description": "Valor m\u00ednimo do frete (se 0, sem m\u00ednimoimo)"
     },
     "delivery_enabled": {
       "type": "boolean",
       "default": true,
       "description": "Entregas habilitadas"
+    },
+    "delivery_city": {
+      "type": "string",
+      "description": "Cidade onde a loja faz entregas",
+      "default": "Gravata\u00ed"
+    },
+    "delivery_state": {
+      "type": "string",
+      "description": "Estado (UF) onde a loja faz entregas",
+      "default": "RS"
     }
   },
   "required": [
