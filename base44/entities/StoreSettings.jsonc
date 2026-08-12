@@ -51,7 +51,22 @@
     "min_freight": {
       "type": "number",
       "default": 0,
-      "description": "Valor m\u00ednimo do frete (se 0, sem m\u00ednimoimo)"
+      "description": "Valor m\u00ednimo do frete (se 0, sem m\u00ednimo)"
+    },
+    "free_freight_threshold": {
+      "type": "number",
+      "default": 0,
+      "description": "Pedidos acima deste valor t\u00eam frete gr\u00e1tis (se 0, desativado)"
+    },
+    "max_delivery_radius_km": {
+      "type": "number",
+      "default": 0,
+      "description": "Raio m\u00e1ximo de entrega em KM (se 0, sem limite)"
+    },
+    "estimated_delivery_minutes": {
+      "type": "number",
+      "default": 30,
+      "description": "Tempo estimado de entrega em minutos"
     },
     "delivery_enabled": {
       "type": "boolean",

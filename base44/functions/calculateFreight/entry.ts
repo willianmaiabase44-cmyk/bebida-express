@@ -59,6 +59,13 @@ export default async function (req) {
     const route = await calculateRoute(storeLat, storeLng, clientLat, clientLng);
     const distanceKm = route.distance / 1000;
     const freightPerKm = settings.freight_per_km || 0;
+
+    // Valida raio máximo de entrega
+    const maxRadius = settings.max_delivery_radius_km || 0;
+    if (maxRadius > 0 && distanceKm > maxRadius) {
+      return Response.json({ error: `Distância de ${Math.round(distanceKm * 10) / 10} km excede o raio máximo de entrega de ${maxRadius} km` }, { status: 403 });
+    }
+
     let freight = distanceKm * freightPerKm;
     if (settings.min_freight && freight < settings.min_freight) {
       freight = settings.min_freight;
@@ -71,6 +78,8 @@ export default async function (req) {
       freight_per_km: freightPerKm,
       freight: Math.round(freight * 100) / 100,
       min_freight: settings.min_freight || 0,
+      free_freight_threshold: settings.free_freight_threshold || 0,
+      estimated_delivery_minutes: settings.estimated_delivery_minutes || 30,
       client_lat: clientLat,
       client_lng: clientLng,
       client_address: clientAddress,

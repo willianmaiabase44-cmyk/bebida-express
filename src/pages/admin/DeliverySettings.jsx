@@ -23,8 +23,9 @@ export default function DeliverySettings() {
   const [form, setForm] = useState({
     store_name: "Smoke Bebidas",
     cep: "", street: "", number: "", complement: "", district: "", city: "", state: "RS",
-    lat: null, lng: null, freight_per_km: 2.5, min_freight: 0, delivery_enabled: true,
-    delivery_city: "Gravataí", delivery_state: "RS",
+    lat: null, lng: null, freight_per_km: 2.5, min_freight: 0, free_freight_threshold: 0,
+    max_delivery_radius_km: 0, estimated_delivery_minutes: 30,
+    delivery_enabled: true, delivery_city: "Gravataí", delivery_state: "RS",
   });
 
   const load = async () => {
@@ -50,6 +51,9 @@ export default function DeliverySettings() {
         lat: settings.lat, lng: settings.lng,
         freight_per_km: settings.freight_per_km ?? 2.5,
         min_freight: settings.min_freight ?? 0,
+        free_freight_threshold: settings.free_freight_threshold ?? 0,
+        max_delivery_radius_km: settings.max_delivery_radius_km ?? 0,
+        estimated_delivery_minutes: settings.estimated_delivery_minutes ?? 30,
         delivery_enabled: settings.delivery_enabled ?? true,
         delivery_city: settings.delivery_city || "Gravataí",
         delivery_state: settings.delivery_state || "RS",
@@ -241,6 +245,21 @@ export default function DeliverySettings() {
                 <Input type="number" step="0.01" value={form.min_freight} onChange={e => setForm(f => ({ ...f, min_freight: parseFloat(e.target.value) || 0 }))} />
                 <p className="text-xs text-muted-foreground mt-1">Se 0, sem valor mínimo</p>
               </div>
+              <div>
+                <Label>Frete grátis acima de (R$) — opcional</Label>
+                <Input type="number" step="0.01" value={form.free_freight_threshold} onChange={e => setForm(f => ({ ...f, free_freight_threshold: parseFloat(e.target.value) || 0 }))} />
+                <p className="text-xs text-muted-foreground mt-1">Pedidos acima deste valor não pagam frete. Se 0, desativado.</p>
+              </div>
+              <div>
+                <Label>Raio máximo de entrega (KM) — opcional</Label>
+                <Input type="number" step="0.1" value={form.max_delivery_radius_km} onChange={e => setForm(f => ({ ...f, max_delivery_radius_km: parseFloat(e.target.value) || 0 }))} />
+                <p className="text-xs text-muted-foreground mt-1">Endereços além desta distância são recusados. Se 0, sem limite.</p>
+              </div>
+              <div>
+                <Label>Tempo estimado de entrega (minutos)</Label>
+                <Input type="number" step="1" value={form.estimated_delivery_minutes} onChange={e => setForm(f => ({ ...f, estimated_delivery_minutes: parseInt(e.target.value) || 30 }))} />
+                <p className="text-xs text-muted-foreground mt-1">Tempo médio exibido para o cliente no checkout</p>
+              </div>
               <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
                 <div>
                   <Label className="cursor-pointer">Entregas habilitadas</Label>
@@ -248,9 +267,15 @@ export default function DeliverySettings() {
                 </div>
                 <Switch checked={form.delivery_enabled} onCheckedChange={v => setForm(f => ({ ...f, delivery_enabled: v }))} />
               </div>
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-sm">
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-sm space-y-1">
                 <p className="text-muted-foreground mb-1">Exemplo de cálculo:</p>
                 <p>6 km × {formatPrice(form.freight_per_km)} = <span className="font-bold text-primary">{formatPrice(6 * form.freight_per_km)}</span></p>
+                {form.free_freight_threshold > 0 && (
+                  <p className="text-muted-foreground">Pedidos acima de <span className="font-bold text-primary">{formatPrice(form.free_freight_threshold)}</span> = <span className="font-bold text-primary">Frete grátis</span></p>
+                )}
+                {form.max_delivery_radius_km > 0 && (
+                  <p className="text-muted-foreground">Raio máximo: <span className="font-bold text-primary">{form.max_delivery_radius_km} km</span></p>
+                )}
               </div>
             </CardContent>
           </Card>
