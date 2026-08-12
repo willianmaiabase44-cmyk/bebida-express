@@ -1,0 +1,44 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Celular do cliente (apenas d\u00edgitos)"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email opcional"
+    }
+  },
+  "required": [
+    "name",
+    "phone"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

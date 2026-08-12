@@ -3,36 +3,30 @@ import { geocodeAddress, calculateRoute, buildFullAddress, buildGeocodeQuery } f
 
 // Calcula frete validado pelo backend: geocodifica endereço, busca settings da loja,
 // calcula rota real (OSRM) e aplica valor por KM configurado pelo admin.
-// Não confia em nenhum valor enviado pelo frontend.
+// Não requer auth da plataforma — clientes usam sessão por celular.
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { address_id, address } = body;
 
     let clientLat, clientLng, clientAddress;
 
-    // Se veio address_id, busca o endereço salvo do cliente
     if (address_id) {
-      const saved = await base44.entities.CustomerAddress.get(address_id);
+      const saved = await base44.asServiceRole.entities.CustomerAddress.get(address_id);
       if (!saved) return Response.json({ error: "Endereço não encontrado" }, { status: 404 });
       clientLat = saved.lat;
       clientLng = saved.lng;
       clientAddress = saved;
-      // Se não tem coords salvas, geocodifica agora
       if (clientLat == null || clientLng == null) {
         const geo = await geocodeAddress(buildGeocodeQuery(saved));
-        if (!geo) return Response.json({ error: "Não foi possível localizar o endereço salvo. Edite e tente novamente." }, { status: 404 });
+        if (!geo) return Response.json({ error: "Não foi possível localizar o endereço. Edite e tente novamente." }, { status: 404 });
         clientLat = geo.lat;
         clientLng = geo.lng;
-        // Atualiza o endereço salvo com as coords
-        await base44.entities.CustomerAddress.update(address_id, { lat: geo.lat, lng: geo.lng });
+        await base44.asServiceRole.entities.CustomerAddress.update(address_id, { lat: geo.lat, lng: geo.lng });
       }
     } else if (address) {
-      // Endereço digitado na hora
       const geo = await geocodeAddress(buildGeocodeQuery(address));
       if (!geo) return Response.json({ error: "Endereço não encontrado. Verifique os dados e tente novamente." }, { status: 404 });
       clientLat = geo.lat;
@@ -42,18 +36,17 @@ export default async function (req) {
       return Response.json({ error: "Endereço é obrigatório" }, { status: 400 });
     }
 
-    // Busca configurações da loja (primeiro registro)
     const settingsList = await base44.asServiceRole.entities.StoreSettings.list();
     const settings = settingsList?.[0];
     if (!settings) return Response.json({ error: "Loja ainda não configurou endereço de entrega. Entre em contato." }, { status: 503 });
     if (!settings.delivery_enabled) return Response.json({ error: "Entregas estão temporariamente desativadas." }, { status: 503 });
 
     // Valida área de entrega (cidade/estado)
-    const deliveryCity = (settings.delivery_city || "").toLowerCase().trim();
+    const deliveryCity = (settings.delivery_city || "").toLowerCase().replace(/\s+/g, "").trim();
     const deliveryState = (settings.delivery_state || "").toUpperCase().trim();
     const clientCity = (clientAddress.city || "").toLowerCase().replace(/\s+/g, "").trim();
     const clientState = (clientAddress.state || "").toUpperCase().trim();
-    if (deliveryCity && deliveryState && (clientCity !== deliveryCity.replace(/\s+/g, "") || clientState !== deliveryState)) {
+    if (deliveryCity && deliveryState && (clientCity !== deliveryCity || clientState !== deliveryState)) {
       return Response.json({ error: `Entregamos apenas em ${settings.delivery_city}/${settings.delivery_state}` }, { status: 403 });
     }
 
@@ -63,7 +56,6 @@ export default async function (req) {
       return Response.json({ error: "Endereço da loja não geolocalizado. Admin deve salvar as configurações." }, { status: 503 });
     }
 
-    // Calcula rota real
     const route = await calculateRoute(storeLat, storeLng, clientLat, clientLng);
     const distanceKm = route.distance / 1000;
     const freightPerKm = settings.freight_per_km || 0;
@@ -79,8 +71,6 @@ export default async function (req) {
       freight_per_km: freightPerKm,
       freight: Math.round(freight * 100) / 100,
       min_freight: settings.min_freight || 0,
-      store_lat: storeLat,
-      store_lng: storeLng,
       client_lat: clientLat,
       client_lng: clientLng,
       client_address: clientAddress,

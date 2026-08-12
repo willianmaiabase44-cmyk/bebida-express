@@ -2,21 +2,20 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { geocodeAddress, calculateRoute, buildFullAddress, buildGeocodeQuery } from "../../shared/geo.ts";
 
 // Cria o pedido online com validação completa no backend.
-// Não confia em preço, frete, desconto ou total enviados pelo frontend.
+// Não requer auth da plataforma — clientes usam sessão por celular (customer_id).
 // Recalcula tudo usando dados reais do banco e baixa estoque automaticamente.
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { items, address_id, address, payment_method, change_for, notes } = body;
+    const { items, address_id, customer_id, payment_method, change_for, notes } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return Response.json({ error: "Carrinho vazio" }, { status: 400 });
     }
     if (!payment_method) return Response.json({ error: "Forma de pagamento obrigatória" }, { status: 400 });
+    if (!customer_id) return Response.json({ error: "Cliente obrigatório" }, { status: 400 });
 
     // 1. Busca configurações da loja
     const settingsList = await base44.asServiceRole.entities.StoreSettings.list();
@@ -24,29 +23,25 @@ export default async function (req) {
     if (!settings) return Response.json({ error: "Loja não configurada para entregas" }, { status: 503 });
     if (!settings.delivery_enabled) return Response.json({ error: "Entregas desativadas" }, { status: 503 });
 
-    // 2. Resolve endereço de entrega
-    let deliveryAddress, clientLat, clientLng;
-    if (address_id) {
-      const saved = await base44.entities.CustomerAddress.get(address_id);
-      if (!saved) return Response.json({ error: "Endereço não encontrado" }, { status: 404 });
-      deliveryAddress = saved;
-      clientLat = saved.lat;
-      clientLng = saved.lng;
-      if (clientLat == null || clientLng == null) {
-        const geo = await geocodeAddress(buildGeocodeQuery(saved));
-        if (!geo) return Response.json({ error: "Endereço não localizado" }, { status: 404 });
-        clientLat = geo.lat;
-        clientLng = geo.lng;
-        await base44.entities.CustomerAddress.update(address_id, { lat: geo.lat, lng: geo.lng });
-      }
-    } else if (address) {
-      const geo = await geocodeAddress(buildGeocodeQuery(address));
-      if (!geo) return Response.json({ error: "Endereço não localizado. Verifique os dados." }, { status: 404 });
-      deliveryAddress = { ...address, lat: geo.lat, lng: geo.lng };
+    // 2. Busca cliente
+    const customer = await base44.asServiceRole.entities.Customer.get(customer_id);
+    if (!customer) return Response.json({ error: "Cliente não encontrado" }, { status: 404 });
+
+    // 3. Resolve endereço de entrega
+    if (!address_id) return Response.json({ error: "Endereço de entrega obrigatório" }, { status: 400 });
+    const saved = await base44.asServiceRole.entities.CustomerAddress.get(address_id);
+    if (!saved) return Response.json({ error: "Endereço não encontrado" }, { status: 404 });
+
+    let clientLat = saved.lat;
+    let clientLng = saved.lng;
+    let deliveryAddress = saved;
+
+    if (clientLat == null || clientLng == null) {
+      const geo = await geocodeAddress(buildGeocodeQuery(saved));
+      if (!geo) return Response.json({ error: "Endereço não localizado" }, { status: 404 });
       clientLat = geo.lat;
       clientLng = geo.lng;
-    } else {
-      return Response.json({ error: "Endereço de entrega obrigatório" }, { status: 400 });
+      await base44.asServiceRole.entities.CustomerAddress.update(address_id, { lat: geo.lat, lng: geo.lng });
     }
 
     // Valida área de entrega (cidade/estado)
@@ -58,7 +53,7 @@ export default async function (req) {
       return Response.json({ error: `Entregamos apenas em ${settings.delivery_city}/${settings.delivery_state}` }, { status: 403 });
     }
 
-    // 3. Calcula rota e frete (backend)
+    // 4. Calcula rota e frete (backend)
     const storeLat = settings.lat;
     const storeLng = settings.lng;
     if (storeLat == null || storeLng == null) {
@@ -73,7 +68,7 @@ export default async function (req) {
     }
     freight = Math.round(freight * 100) / 100;
 
-    // 4. Valida produtos e calcula subtotal (preços do banco, não do frontend)
+    // 5. Valida produtos e calcula subtotal (preços do banco, não do frontend)
     const productIds = items.map((i) => i.product_id).filter(Boolean);
     const products = await base44.asServiceRole.entities.Product.filter({ id: { $in: productIds } });
 
@@ -83,7 +78,6 @@ export default async function (req) {
 
     for (const item of items) {
       if (item.is_kit) {
-        // Kits: usa o preço enviado (combo customizado), sem baixa individual
         const lineTotal = item.price * item.quantity;
         subtotal += lineTotal;
         validatedItems.push({
@@ -101,7 +95,6 @@ export default async function (req) {
       if (!product) return Response.json({ error: `Produto não encontrado: ${item.product_name}` }, { status: 400 });
       if (!product.active) return Response.json({ error: `Produto indisponível: ${product.name}` }, { status: 400 });
 
-      // Valida estoque
       if (product.stock < item.quantity) {
         return Response.json({ error: `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}` }, { status: 400 });
       }
@@ -127,17 +120,18 @@ export default async function (req) {
     subtotal = Math.round(subtotal * 100) / 100;
     const total = Math.round((subtotal + freight) * 100) / 100;
 
-    // 5. Gera número do pedido
+    // 6. Gera número do pedido
     const existingOrders = await base44.asServiceRole.entities.Order.list("-order_number", 1);
     const lastNumber = existingOrders?.[0]?.order_number || 1000;
     const orderNumber = lastNumber + 1;
 
-    // 6. Cria o pedido
+    // 7. Cria o pedido
     const orderData = {
+      customer_id: customer.id,
       order_number: orderNumber,
-      customer_name: user.full_name || "Cliente",
-      customer_phone: user.data?.phone || "",
-      customer_email: user.email,
+      customer_name: customer.name,
+      customer_phone: customer.phone,
+      customer_email: customer.email || "",
       address: {
         cep: deliveryAddress.cep,
         street: deliveryAddress.street,
@@ -163,13 +157,13 @@ export default async function (req) {
       status: "novo",
       channel: "online",
       notes: notes || "",
-      status_history: [{ status: "novo", date: new Date().toISOString(), by: user.email }],
+      status_history: [{ status: "novo", date: new Date().toISOString(), by: customer.phone }],
       date: new Date().toISOString().split("T")[0],
     };
 
-    const order = await base44.entities.Order.create(orderData);
+    const order = await base44.asServiceRole.entities.Order.create(orderData);
 
-    // 7. Baixa estoque + registra movimentações
+    // 8. Baixa estoque + registra movimentações
     for (const su of stockUpdates) {
       await base44.asServiceRole.entities.Product.update(su.id, { stock: su.stock });
       await base44.asServiceRole.entities.StockMovement.create({
