@@ -46,8 +46,11 @@ export default function LiveRouteMap({ storeCoords, clientCoords, routeGeometry,
   const [heading, setHeading] = useState(0);
   const [following, setFollowing] = useState(true);
   const [gpsError, setGpsError] = useState(null);
+  const [motoRoute, setMotoRoute] = useState(null);
+  const [motoRouteInfo, setMotoRouteInfo] = useState(null);
   const watchIdRef = useRef(null);
   const lastPosRef = useRef(null);
+  const lastFetchRef = useRef({ pos: null, time: 0 });
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -83,6 +86,33 @@ export default function LiveRouteMap({ storeCoords, clientCoords, routeGeometry,
       }
     };
   }, []);
+
+  // Busca rota do motoboy até o cliente (throttled: a cada 30s ou 100m de movimento)
+  useEffect(() => {
+    if (!motoPos || !clientCoords) return;
+    const now = Date.now();
+    const [lat, lng] = motoPos;
+    const last = lastFetchRef.current;
+    const movedEnough = !last.pos || Math.hypot(lat - last.pos[0], lng - last.pos[1]) > 0.001;
+    const timeEnough = now - last.time > 30000;
+    if (!movedEnough && !timeEnough) return;
+    lastFetchRef.current = { pos: motoPos, time: now };
+
+    const url = `https://router.project-osrm.org/route/v1/driving/${lng},${lat};${clientCoords[1]},${clientCoords[0]}?overview=full&geometries=geojson`;
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        if (data?.routes?.[0]) {
+          const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+          setMotoRoute(coords);
+          setMotoRouteInfo({
+            distance: (data.routes[0].distance / 1000).toFixed(1),
+            duration: Math.round(data.routes[0].duration / 60),
+          });
+        }
+      })
+      .catch(() => {});
+  }, [motoPos, clientCoords]);
 
   const bounds = [];
   if (storeCoords) bounds.push(storeCoords);
@@ -122,6 +152,9 @@ export default function LiveRouteMap({ storeCoords, clientCoords, routeGeometry,
           {routeGeometry && routeGeometry.length > 0 && (
             <Polyline positions={routeGeometry} pathOptions={{ color: '#ef4444', weight: 4, opacity: 0.8 }} />
           )}
+          {motoRoute && motoRoute.length > 0 && (
+            <Polyline positions={motoRoute} pathOptions={{ color: '#f59e0b', weight: 5, opacity: 0.9, dashArray: '8 6' }} />
+          )}
           {motoPos && (
             <Marker position={motoPos} icon={motoboyIconRotated}>
               <Popup><b>Sua localização</b></Popup>
@@ -129,6 +162,14 @@ export default function LiveRouteMap({ storeCoords, clientCoords, routeGeometry,
           )}
         </MapContainer>
       </div>
+
+      {/* Info rota até o cliente */}
+      {motoRouteInfo && (
+        <div className="absolute top-2 left-2 z-[1000] bg-primary/95 text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-2 shadow-lg">
+          <Navigation className="w-3.5 h-3.5" />
+          {motoRouteInfo.distance} km • {motoRouteInfo.duration} min até o cliente
+        </div>
+      )}
 
       {/* Botão seguir localização */}
       <button
