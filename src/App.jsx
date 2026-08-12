@@ -8,8 +8,10 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import CustomerRoute from '@/components/CustomerRoute';
+import MotoboyRoute from '@/components/MotoboyRoute';
 import { CartProvider } from '@/context/CartContext';
 import { CustomerProvider } from '@/context/CustomerContext';
+import { MotoboyProvider } from '@/context/MotoboyContext';
 
 // Public pages
 import Store from '@/pages/Store';
@@ -38,6 +40,14 @@ import Motoboys from '@/pages/admin/Motoboys';
 import Deliveries from '@/pages/admin/Deliveries';
 import Orders from '@/pages/admin/Orders';
 import DeliverySettings from '@/pages/admin/DeliverySettings';
+import DeliveryReviews from '@/pages/admin/DeliveryReviews';
+
+// Motoboy pages
+import MotoboyLogin from '@/pages/motoboy/MotoboyLogin';
+import MotoboyLayout from '@/components/motoboy/MotoboyLayout';
+import MotoboyDashboard from '@/pages/motoboy/MotoboyDashboard';
+import MotoboyDeliveryDetail from '@/pages/motoboy/MotoboyDeliveryDetail';
+import MotoboyHistory from '@/pages/motoboy/MotoboyHistory';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -70,6 +80,16 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
+      {/* Motoboy routes */}
+      <Route path="/motoboy/login" element={<MotoboyLogin />} />
+      <Route element={<MotoboyRoute />}>
+        <Route element={<MotoboyLayout />}>
+          <Route path="/motoboy" element={<MotoboyDashboard />} />
+          <Route path="/motoboy/entrega/:id" element={<MotoboyDeliveryDetail />} />
+          <Route path="/motoboy/historico" element={<MotoboyHistory />} />
+        </Route>
+      </Route>
+
       {/* Customer routes - requires customer phone session */}
       <Route element={<CustomerRoute />}>
         <Route path="/checkout" element={<Checkout />} />
@@ -89,6 +109,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/delivery-settings" element={<DeliverySettings />} />
           <Route path="/admin/motoboys" element={<Motoboys />} />
           <Route path="/admin/deliveries" element={<Deliveries />} />
+          <Route path="/admin/reviews" element={<DeliveryReviews />} />
           <Route path="/admin/quick-update" element={<QuickUpdate />} />
           <Route path="/admin/reports" element={<Reports />} />
         </Route>
@@ -105,11 +126,13 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <CartProvider>
           <CustomerProvider>
-            <Router>
-              <AuthenticatedApp />
-            </Router>
-            <Toaster />
-            <SonnerToaster position="top-center" theme="dark" />
+            <MotoboyProvider>
+              <Router>
+                <AuthenticatedApp />
+              </Router>
+              <Toaster />
+              <SonnerToaster position="top-center" theme="dark" />
+            </MotoboyProvider>
           </CustomerProvider>
         </CartProvider>
       </QueryClientProvider>

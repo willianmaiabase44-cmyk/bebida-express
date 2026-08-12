@@ -20,7 +20,7 @@ const STATUS_OPTIONS = [
 
 export default function MotoboyForm({ open, onClose, onSave, motoboy, saving }) {
   const [formData, setFormData] = useState({
-    name: '', phone: '', vehicle_type: 'moto', plate: '', status: 'disponivel', active: true,
+    name: '', phone: '', login: '', password: '', vehicle_type: 'moto', plate: '', status: 'disponivel', active: true,
   });
 
   useEffect(() => {
@@ -28,13 +28,15 @@ export default function MotoboyForm({ open, onClose, onSave, motoboy, saving }) 
       setFormData({
         name: motoboy.name || '',
         phone: motoboy.phone || '',
+        login: motoboy.login || '',
+        password: '',
         vehicle_type: motoboy.vehicle_type || 'moto',
         plate: motoboy.plate || '',
         status: motoboy.status || 'disponivel',
         active: motoboy.active !== false,
       });
     } else {
-      setFormData({ name: '', phone: '', vehicle_type: 'moto', plate: '', status: 'disponivel', active: true });
+      setFormData({ name: '', phone: '', login: '', password: '', vehicle_type: 'moto', plate: '', status: 'disponivel', active: true });
     }
   }, [motoboy, open]);
 
@@ -45,7 +47,7 @@ export default function MotoboyForm({ open, onClose, onSave, motoboy, saving }) 
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{motoboy ? 'Editar Motoboy' : 'Novo Motoboy'}</DialogTitle>
         </DialogHeader>
@@ -56,8 +58,22 @@ export default function MotoboyForm({ open, onClose, onSave, motoboy, saving }) 
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">Telefone / WhatsApp *</Label>
-            <Input id="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required placeholder="(11) 99999-9999" />
+            <Input id="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required placeholder="(51) 99999-9999" />
           </div>
+
+          <div className="border-t border-border pt-4 space-y-2">
+            <Label htmlFor="login" className="text-primary font-semibold">Login de Acesso *</Label>
+            <Input id="login" value={formData.login} onChange={e => setFormData({ ...formData, login: e.target.value })} required placeholder="joao.silva" autoCapitalize="none" />
+            <p className="text-xs text-muted-foreground">Usado pelo motoboy para entrar na área dele</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">
+              {motoboy ? 'Nova Senha (deixe vazio para manter)' : 'Senha *'}
+            </Label>
+            <Input id="password" type="password" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} required={!motoboy} placeholder="••••••••" />
+            {!motoboy && <p className="text-xs text-muted-foreground">A senha será armazenada com hash (criptografada)</p>}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Veículo</Label>

@@ -10,6 +10,18 @@
       "type": "string",
       "description": "Telefone / WhatsApp"
     },
+    "login": {
+      "type": "string",
+      "description": "Login \u00fanico do motoboy para acessar a \u00e1rea dele"
+    },
+    "password_hash": {
+      "type": "string",
+      "description": "Hash da senha (PBKDF2), nunca em texto puro"
+    },
+    "password_salt": {
+      "type": "string",
+      "description": "Salt usado no hash da senha"
+    },
     "vehicle_type": {
       "type": "string",
       "enum": [
@@ -52,6 +64,29 @@
   },
   "required": [
     "name",
-    "phone"
-  ]
+    "phone",
+    "login"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }

@@ -1,0 +1,70 @@
+{
+  "name": "DeliveryReview",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "description": "ID do pedido avaliado"
+    },
+    "order_number": {
+      "type": "number",
+      "description": "N\u00famero do pedido"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "ID do cliente que avaliou"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "motoboy_id": {
+      "type": "string",
+      "description": "ID do motoboy avaliado"
+    },
+    "motoboy_name": {
+      "type": "string",
+      "description": "Nome do motoboy"
+    },
+    "rating": {
+      "type": "number",
+      "description": "Nota de 1 a 5"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Coment\u00e1rio opcional"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da avalia\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "order_id",
+    "customer_id",
+    "motoboy_id",
+    "rating",
+    "date"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

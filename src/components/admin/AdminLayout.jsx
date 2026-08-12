@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { path: '/admin/delivery-settings', icon: Settings, label: 'Config. de Entrega' },
   { path: '/admin/motoboys', icon: Bike, label: 'Motoboys' },
   { path: '/admin/deliveries', icon: MapPin, label: 'Entregas' },
+  { path: '/admin/reviews', icon: BarChart3, label: 'Avaliações' },
   { path: '/admin/reports', icon: BarChart3, label: 'Relatórios' },
 ];
 

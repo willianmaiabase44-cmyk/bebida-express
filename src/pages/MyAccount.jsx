@@ -10,7 +10,9 @@ import { toast } from "sonner";
 import { formatPrice } from "@/lib/constants";
 import { User, MapPin, Package, Plus, Pencil, Trash2, Phone, Loader2, ShoppingBag, ArrowLeft } from "lucide-react";
 import AddressForm from "@/components/checkout/AddressForm";
+import DeliveryReviewForm from "@/components/store/DeliveryReviewForm";
 import { useCustomer } from "@/context/CustomerContext";
+import { Star } from "lucide-react";
 
 const STATUS_CONFIG = {
   novo: { label: "Novo", color: "bg-blue-500/15 text-blue-400" },
@@ -32,6 +34,8 @@ export default function MyAccount() {
   const [loading, setLoading] = useState(true);
   const [editAddress, setEditAddress] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [reviewingOrder, setReviewingOrder] = useState(null);
+  const [reviewedOrders, setReviewedOrders] = useState([]);
 
   const load = async () => {
     if (!customer) return;
@@ -149,6 +153,34 @@ export default function MyAccount() {
                       {order.items?.length > 3 && <p className="text-xs text-muted-foreground">+ {order.items.length - 3} outros itens</p>}
                     </div>
                     <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" /> {order.address?.full}</div>
+                    {order.status === "entregue" && order.motoboy_name && !reviewedOrders.includes(order.id) && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        {reviewingOrder === order.id ? (
+                          <DeliveryReviewForm
+                            order={order}
+                            customer={customer}
+                            onSubmitted={() => {
+                              setReviewedOrders([...reviewedOrders, order.id]);
+                              setReviewingOrder(null);
+                            }}
+                          />
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full gap-2"
+                            onClick={() => setReviewingOrder(order.id)}
+                          >
+                            <Star className="w-4 h-4 text-primary" /> Avaliar entrega
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    {order.status === "entregue" && reviewedOrders.includes(order.id) && (
+                      <div className="mt-3 pt-3 border-t border-border text-center text-sm text-green-400 flex items-center justify-center gap-1.5">
+                        <Star className="w-4 h-4 fill-green-400" /> Avaliação enviada
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );

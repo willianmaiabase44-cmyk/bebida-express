@@ -62,7 +62,21 @@ export default function Orders() {
   const assignMotoboy = async (orderId, motoboyId) => {
     const motoboy = motoboys.find(m => m.id === motoboyId);
     if (!motoboy) return;
-    await updateStatus(orderId, "saiu_para_entrega", { motoboy_id: motoboy.id, motoboy_name: motoboy.name });
+    try {
+      const res = await base44.functions.invoke("motoboyManageOrder", {
+        action: "assign",
+        order_id: orderId,
+        motoboy_id: motoboyId,
+      });
+      if (res.data?.error) {
+        toast.error(res.data.error);
+      } else {
+        toast.success(`${motoboy.name} designado para a entrega`);
+        load();
+      }
+    } catch (e) {
+      toast.error("Erro ao designar motoboy");
+    }
   };
 
   const filtered = filter === "all" ? orders : orders.filter(o => o.status === filter);
@@ -101,6 +115,9 @@ export default function Orders() {
           {filtered.map(order => {
             const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.novo;
             const isNew = order.status === "novo";
+            const isWaitingAccept = order.status === "pronto" && order.motoboy_id;
+            const displayLabel = isWaitingAccept ? "Aguardando Aceite" : sc.label;
+            const displayColor = isWaitingAccept ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : sc.color;
             return (
               <Card key={order.id} className={`bg-card border-border ${isNew ? "border-blue-500/40 ring-1 ring-blue-500/20" : ""}`}>
                 <CardContent className="p-4">
@@ -108,7 +125,7 @@ export default function Orders() {
                     <div className="space-y-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-heading font-bold text-lg">#{order.order_number}</span>
-                        <Badge className={sc.color}>{sc.label}</Badge>
+                        <Badge className={displayColor}>{displayLabel}</Badge>
                         {isNew && <span className="text-xs text-blue-400 animate-pulse">● Novo pedido</span>}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
@@ -139,13 +156,22 @@ export default function Orders() {
                     {order.status === "novo" && <Button size="sm" onClick={() => updateStatus(order.id, "confirmado")}>Confirmar</Button>}
                     {order.status === "confirmado" && <Button size="sm" onClick={() => updateStatus(order.id, "em_preparacao")}>Em Preparação</Button>}
                     {order.status === "em_preparacao" && <Button size="sm" onClick={() => updateStatus(order.id, "pronto")}>Pronto</Button>}
-                    {order.status === "pronto" && (
+                    {order.status === "pronto" && !order.motoboy_id && (
                       <Select onValueChange={(v) => assignMotoboy(order.id, v)}>
                         <SelectTrigger className="w-40 h-8"><SelectValue placeholder="Designar motoboy" /></SelectTrigger>
                         <SelectContent>{motoboys.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
                       </Select>
                     )}
-                    {order.status === "saiu_para_entrega" && <Button size="sm" onClick={() => updateStatus(order.id, "entregue")}>Marcar Entregue</Button>}
+                    {order.status === "pronto" && order.motoboy_id && (
+                      <span className="text-xs text-amber-400 flex items-center gap-1 px-2 py-1 bg-amber-500/10 rounded-md">
+                        <Bike className="w-3.5 h-3.5" /> {order.motoboy_name} — aguardando aceite
+                      </span>
+                    )}
+                    {order.status === "saiu_para_entrega" && (
+                      <span className="text-xs text-orange-400 flex items-center gap-1 px-2 py-1 bg-orange-500/10 rounded-md">
+                        <Bike className="w-3.5 h-3.5" /> {order.motoboy_name} — em rota
+                      </span>
+                    )}
                     {!["entregue", "cancelado"].includes(order.status) && <Button variant="outline" size="sm" className="text-destructive" onClick={() => updateStatus(order.id, "cancelado")}>Cancelar</Button>}
                   </div>
                 </CardContent>
@@ -189,7 +215,22 @@ function OrderDetails({ order, motoboys, onStatus, onAssign }) {
         {order.change_for != null && order.change_for > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">Troco para</span><span>{formatPrice(order.change_for)}</span></div>}
       </div>
       {order.notes && <div className="bg-secondary/50 rounded-lg p-3"><span className="text-xs text-muted-foreground">Obs: </span>{order.notes}</div>}
-      {order.motoboy_name && <div className="flex items-center gap-2 text-sm"><Bike className="w-4 h-4 text-primary" />Motoboy: {order.motoboy_name}</div>}
+      {order.motoboy_name && (
+        <div className="space-y-2 border-t border-border pt-3">
+          <div className="flex items-center gap-2 text-sm"><Bike className="w-4 h-4 text-primary" />Motoboy: <strong>{order.motoboy_name}</strong></div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {order.motoboy_assigned_at && (
+              <div className="text-muted-foreground">Designado às: <span className="text-foreground">{new Date(order.motoboy_assigned_at).toLocaleString("pt-BR")}</span></div>
+            )}
+            {order.accepted_at && (
+              <div className="text-muted-foreground">Aceito às: <span className="text-foreground">{new Date(order.accepted_at).toLocaleString("pt-BR")}</span></div>
+            )}
+            {order.delivered_at && (
+              <div className="text-muted-foreground">Entregue às: <span className="text-green-400">{new Date(order.delivered_at).toLocaleString("pt-BR")}</span></div>
+            )}
+          </div>
+        </div>
+      )}
       {order.status_history?.length > 0 && (
         <div className="space-y-1">
           <h4 className="font-semibold text-xs uppercase text-muted-foreground">Histórico</h4>

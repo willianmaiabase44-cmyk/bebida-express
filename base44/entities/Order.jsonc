@@ -151,6 +151,18 @@
       "type": "string",
       "description": "Nome do motoboy designado"
     },
+    "motoboy_assigned_at": {
+      "type": "string",
+      "description": "Data/hora em que o motoboy foi designado"
+    },
+    "accepted_at": {
+      "type": "string",
+      "description": "Data/hora em que o motoboy aceitou a entrega"
+    },
+    "delivered_at": {
+      "type": "string",
+      "description": "Data/hora em que a entrega foi conclu\u00edda"
+    },
     "channel": {
       "type": "string",
       "enum": [

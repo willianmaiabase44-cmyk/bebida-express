@@ -37,18 +37,20 @@ export default function Motoboys() {
   const handleSave = async (formData) => {
     setSaving(true);
     try {
-      if (editing) {
-        await base44.entities.DeliveryDriver.update(editing.id, formData);
-        toast.success('Motoboy atualizado!');
+      const res = await base44.functions.invoke('manageMotoboy', {
+        action: editing ? 'update' : 'create',
+        data: editing ? { ...formData, id: editing.id } : formData,
+      });
+      if (res.data?.error) {
+        toast.error(res.data.error);
       } else {
-        await base44.entities.DeliveryDriver.create(formData);
-        toast.success('Motoboy cadastrado!');
+        toast.success(editing ? 'Motoboy atualizado!' : 'Motoboy cadastrado!');
+        queryClient.invalidateQueries({ queryKey: ['deliveryDrivers'] });
+        setFormOpen(false);
+        setEditing(null);
       }
-      queryClient.invalidateQueries({ queryKey: ['deliveryDrivers'] });
-      setFormOpen(false);
-      setEditing(null);
     } catch (err) {
-      toast.error('Erro ao salvar: ' + (err.message || 'tente novamente'));
+      toast.error('Erro ao salvar: ' + (err.response?.data?.error || err.message || 'tente novamente'));
     }
     setSaving(false);
   };
