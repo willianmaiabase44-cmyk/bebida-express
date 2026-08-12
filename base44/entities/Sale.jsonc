@@ -1,0 +1,80 @@
+{
+  "name": "Sale",
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "Lista de itens vendidos",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total": {
+      "type": "number",
+      "description": "Valor total da venda"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "dinheiro",
+        "pix",
+        "cartao_credito",
+        "cartao_debito"
+      ],
+      "description": "Forma de pagamento"
+    },
+    "amount_paid": {
+      "type": "number",
+      "default": 0,
+      "description": "Valor pago (para c\u00e1lculo de troco)"
+    },
+    "change": {
+      "type": "number",
+      "default": 0,
+      "description": "Troco devolvido"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "pdv",
+        "online"
+      ],
+      "default": "pdv",
+      "description": "Canal da venda"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "concluida",
+        "cancelada"
+      ],
+      "default": "concluida",
+      "description": "Status da venda"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da venda"
+    }
+  },
+  "required": [
+    "items",
+    "total",
+    "payment_method",
+    "date"
+  ]
+}
