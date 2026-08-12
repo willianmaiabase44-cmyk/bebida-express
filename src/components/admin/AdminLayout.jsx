@@ -31,7 +31,7 @@ export default function AdminLayout() {
         <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
           <Menu className="w-5 h-5" />
         </Button>
-        <h1 className="font-heading font-bold text-sm">Smoke Admin</h1>
+        <h1 className="font-heading font-bold text-sm">Smoke Bebidas</h1>
         <Link to="/">
           <Store className="w-5 h-5 text-muted-foreground" />
         </Link>
@@ -51,7 +51,7 @@ export default function AdminLayout() {
               alt="Smoke Bebidas"
               className="h-8 w-auto object-contain"
             />
-            <span className="font-heading font-bold text-sm">Admin</span>
+            <span className="font-heading font-bold text-sm">Smoke Bebidas</span>
           </div>
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
             <X className="w-4 h-4" />
