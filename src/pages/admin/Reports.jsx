@@ -1,199 +1,50 @@
-import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { TrendingUp, AlertTriangle, Clock, BarChart3, Loader2 } from 'lucide-react';
-import { formatPrice, CATEGORIES } from '@/lib/constants';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
+import { DollarSign, ClipboardList, Package, ArrowLeftRight, ShoppingCart, Truck, Wallet, Receipt, Users, Bike, MapPin, Tag, Star, Layers, BarChart3 } from 'lucide-react';
+
+const REPORTS = [
+  { key: 'vendas', label: 'Vendas', desc: 'Faturamento, ticket médio e formas de pagamento', icon: DollarSign, color: 'text-green-400', bg: 'bg-green-500/10' },
+  { key: 'pedidos', label: 'Pedidos', desc: 'Pedidos por status, canal e período', icon: ClipboardList, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+  { key: 'produtos', label: 'Produtos', desc: 'Mais vendidos, faturamento e margem', icon: Package, color: 'text-primary', bg: 'bg-primary/10' },
+  { key: 'estoque', label: 'Estoque', desc: 'Estoque atual, baixo e movimentações', icon: ArrowLeftRight, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+  { key: 'compras', label: 'Compras', desc: 'Entradas por período e produto', icon: ShoppingCart, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+  { key: 'fornecedores', label: 'Fornecedores', desc: 'Cadastro e categorias', icon: Truck, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+  { key: 'financeiro', label: 'Financeiro', desc: 'Receitas, despesas e resultado', icon: Wallet, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  { key: 'contas-pagar', label: 'Contas a Pagar', desc: 'Contas pendentes e pagas', icon: Receipt, color: 'text-red-400', bg: 'bg-red-500/10' },
+  { key: 'clientes', label: 'Clientes', desc: 'Cadastro, compras e ticket médio', icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+  { key: 'motoboys', label: 'Motoboys', desc: 'Entregas, avaliações e performance', icon: Bike, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+  { key: 'entregas', label: 'Entregas', desc: 'Distância, fretes e status', icon: MapPin, color: 'text-teal-400', bg: 'bg-teal-500/10' },
+  { key: 'cupons', label: 'Cupons', desc: 'Promoções ativas e desempenho', icon: Tag, color: 'text-pink-400', bg: 'bg-pink-500/10' },
+  { key: 'avaliacoes', label: 'Avaliações', desc: 'Notas, comentários e média geral', icon: Star, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+  { key: 'combos', label: 'Combos', desc: 'Kits e combos vendidos', icon: Layers, color: 'text-violet-400', bg: 'bg-violet-500/10' },
+];
 
 export default function Reports() {
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ['admin-products'],
-    queryFn: () => base44.entities.Product.list('-created_date', 500),
-  });
-
-  const { data: movements = [] } = useQuery({
-    queryKey: ['admin-movements'],
-    queryFn: () => base44.entities.StockMovement.list('-created_date', 1000),
-  });
-
-  const topSelling = useMemo(() =>
-    [...products].sort((a, b) => (b.total_sold || 0) - (a.total_sold || 0)).slice(0, 10),
-    [products]
-  );
-
-  const lowStock = useMemo(() =>
-    products.filter(p => (p.stock ?? 0) <= (p.min_stock || 5) && p.active !== false).sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0)),
-    [products]
-  );
-
-  const noMovement = useMemo(() => {
-    const movedIds = new Set(movements.map(m => m.product_id));
-    return products.filter(p => !movedIds.has(p.id) && p.active !== false);
-  }, [products, movements]);
-
-  const filteredMovements = useMemo(() => {
-    return movements.filter(m => {
-      if (dateFrom && m.date < dateFrom) return false;
-      if (dateTo && m.date > dateTo) return false;
-      return true;
-    });
-  }, [movements, dateFrom, dateTo]);
-
-  const chartData = useMemo(() =>
-    topSelling.map(p => ({ name: p.name.length > 12 ? p.name.slice(0, 12) + '...' : p.name, vendas: p.total_sold || 0 })),
-    [topSelling]
-  );
-
-  if (isLoading) {
-    return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
-  }
-
+  const navigate = useNavigate();
   return (
     <div>
-      <h1 className="font-heading font-bold text-2xl mb-6">Relatórios</h1>
-
-      <Tabs defaultValue="top" className="space-y-4">
-        <TabsList className="bg-secondary">
-          <TabsTrigger value="top">Mais Vendidos</TabsTrigger>
-          <TabsTrigger value="low">Estoque Baixo</TabsTrigger>
-          <TabsTrigger value="idle">Sem Movimento</TabsTrigger>
-          <TabsTrigger value="history">Histórico</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="top">
-          <Card className="bg-card border-border mb-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-heading text-lg flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-primary" /> Top 10 Mais Vendidos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {chartData.length > 0 && (
-                <div className="h-48 mb-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(0 0% 55%)' }} />
-                      <YAxis tick={{ fontSize: 10, fill: 'hsl(0 0% 55%)' }} />
-                      <Tooltip contentStyle={{ background: 'hsl(0 0% 8%)', border: '1px solid hsl(0 0% 16%)', borderRadius: '8px', color: 'white' }} />
-                      <Bar dataKey="vendas" radius={[4, 4, 0, 0]}>
-                        {chartData.map((_, i) => <Cell key={i} fill={i === 0 ? 'hsl(0 85% 50%)' : 'hsl(0 0% 30%)'} />)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-              <div className="space-y-2">
-                {topSelling.map((p, i) => (
-                  <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
-                    <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{CATEGORIES.find(c => c.value === p.category)?.label}</p>
-                    </div>
-                    <span className="text-sm font-bold text-primary">{p.total_sold || 0} un.</span>
-                    <span className="text-sm text-muted-foreground">{formatPrice(p.price)}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
+      <div className="mb-6">
+        <h1 className="font-heading font-bold text-2xl flex items-center gap-2">
+          <BarChart3 className="w-6 h-6 text-primary" /> Relatórios
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">Escolha o tipo de relatório que deseja visualizar</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {REPORTS.map(r => (
+          <Card
+            key={r.key}
+            className="p-5 cursor-pointer hover:border-primary/50 transition-all hover:scale-[1.02] group"
+            onClick={() => navigate(`/admin/reports/${r.key}`)}
+          >
+            <div className={`w-12 h-12 rounded-xl ${r.bg} flex items-center justify-center mb-3`}>
+              <r.icon className={`w-6 h-6 ${r.color}`} />
+            </div>
+            <h3 className="font-heading font-bold text-base group-hover:text-primary transition-colors">{r.label}</h3>
+            <p className="text-xs text-muted-foreground mt-1">{r.desc}</p>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="low">
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-heading text-lg flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-400" /> Produtos com Estoque Baixo
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {lowStock.map(p => (
-                  <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      <p className="text-[11px] text-muted-foreground">Mín: {p.min_stock || 5}</p>
-                    </div>
-                    <Badge className={`${(p.stock ?? 0) === 0 ? 'bg-destructive/20 text-destructive' : 'bg-amber-500/20 text-amber-400'}`}>
-                      {p.stock ?? 0} un.
-                    </Badge>
-                  </div>
-                ))}
-                {lowStock.length === 0 && <p className="text-center text-muted-foreground py-4">Todos os produtos com estoque OK!</p>}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="idle">
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-heading text-lg flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground" /> Produtos Sem Movimentação
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {noMovement.map(p => (
-                  <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{CATEGORIES.find(c => c.value === p.category)?.label}</p>
-                    </div>
-                    <span className="text-sm text-muted-foreground">Estoque: {p.stock ?? 0}</span>
-                  </div>
-                ))}
-                {noMovement.length === 0 && <p className="text-center text-muted-foreground py-4">Todos os produtos têm movimentação!</p>}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="history">
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-heading text-lg flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-primary" /> Histórico de Movimentações
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-3 mb-4">
-                <div className="flex-1">
-                  <Label className="text-xs">De</Label>
-                  <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-secondary border-none mt-1" />
-                </div>
-                <div className="flex-1">
-                  <Label className="text-xs">Até</Label>
-                  <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="bg-secondary border-none mt-1" />
-                </div>
-              </div>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {filteredMovements.map(m => (
-                  <div key={m.id} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
-                    <Badge variant="outline" className={`text-[10px] shrink-0 ${m.type === 'entrada' ? 'border-green-500/30 text-green-400' : 'border-red-500/30 text-red-400'}`}>
-                      {m.type === 'entrada' ? '+' : '-'}{m.quantity}
-                    </Badge>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{m.product_name}</p>
-                      {m.reason && <p className="text-[10px] text-muted-foreground truncate">{m.reason}</p>}
-                    </div>
-                    <span className="text-[11px] text-muted-foreground shrink-0">{m.date}</span>
-                  </div>
-                ))}
-                {filteredMovements.length === 0 && <p className="text-center text-muted-foreground py-4">Nenhuma movimentação no período</p>}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        ))}
+      </div>
     </div>
   );
 }

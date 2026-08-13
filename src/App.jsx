@@ -35,6 +35,7 @@ import Suppliers from '@/pages/admin/Suppliers';
 import StockManagement from '@/pages/admin/StockManagement';
 import Promotions from '@/pages/admin/Promotions';
 import Reports from '@/pages/admin/Reports';
+import ReportView from '@/pages/admin/ReportView';
 import QuickUpdate from '@/pages/admin/QuickUpdate';
 import POS from '@/pages/admin/POS';
 import Motoboys from '@/pages/admin/Motoboys';
@@ -114,6 +115,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/reviews" element={<DeliveryReviews />} />
           <Route path="/admin/quick-update" element={<QuickUpdate />} />
           <Route path="/admin/reports" element={<Reports />} />
+          <Route path="/admin/reports/:type" element={<ReportView />} />
         </Route>
       </Route>
 
