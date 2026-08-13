@@ -9,13 +9,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDownCircle, ArrowUpCircle, Search, Loader2, Plus } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Search, Loader2, Plus, FileText } from 'lucide-react';
+import StockEntryByNote from '@/components/admin/StockEntryByNote';
 import { formatPrice } from '@/lib/constants';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 export default function StockManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [moveType, setMoveType] = useState('entrada');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -69,9 +71,14 @@ export default function StockManagement() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-heading font-bold text-2xl">Controle de Estoque</h1>
-        <Button onClick={() => setDialogOpen(true)} className="bg-primary hover:bg-primary/90 gap-2">
-          <Plus className="w-4 h-4" /> Nova Movimentação
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setNoteDialogOpen(true)} variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10">
+            <FileText className="w-4 h-4" /> Entrada por Nota
+          </Button>
+          <Button onClick={() => setDialogOpen(true)} className="bg-primary hover:bg-primary/90 gap-2">
+            <Plus className="w-4 h-4" /> Nova Movimentação
+          </Button>
+        </div>
       </div>
 
       <div className="relative mb-4">
@@ -149,6 +156,8 @@ export default function StockManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <StockEntryByNote open={noteDialogOpen} onOpenChange={setNoteDialogOpen} />
     </div>
   );
 }
