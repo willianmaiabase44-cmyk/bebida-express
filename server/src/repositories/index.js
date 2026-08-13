@@ -11,3 +11,5 @@ export { customerRepository } from './customerRepository.js';
 export { customerAddressRepository } from './customerAddressRepository.js';
 export { deliveryDriverRepository } from './deliveryDriverRepository.js';
 export { productRepository } from './productRepository.js';
+export { storeSettingsRepository } from './storeSettingsRepository.js';
+export { couponRepository } from './couponRepository.js';

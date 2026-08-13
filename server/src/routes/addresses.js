@@ -1,18 +1,27 @@
+// ============================================================
+// routes/addresses.js — CRUD de endereços com ownership
+// ============================================================
+// Cliente autenticado só acessa seus próprios endereços.
+// Admin autenticado acessa qualquer endereço.
+// ============================================================
+
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware } from '../middleware/auth.js';
+import {
+  listByCustomer,
+  create,
+  update,
+  remove,
+} from '../controllers/customerAddressController.js';
 
 const router = Router();
 
-// GET /api/addresses/:customerId — listar endereços do cliente — PENDENTE
-router.get('/:customerId', notImplemented('Listar endereços do cliente'));
+// Todas as rotas de endereços requerem autenticação
+router.use(authMiddleware);
 
-// POST /api/addresses — criar endereço — PENDENTE
-router.post('/', notImplemented('Criar endereço'));
-
-// PUT /api/addresses/:id — atualizar endereço — PENDENTE
-router.put('/:id', notImplemented('Atualizar endereço'));
-
-// DELETE /api/addresses/:id — excluir endereço — PENDENTE
-router.delete('/:id', notImplemented('Excluir endereço'));
+router.get('/:customerId', listByCustomer);
+router.post('/', create);
+router.put('/:id', update);
+router.delete('/:id', remove);
 
 export default router;

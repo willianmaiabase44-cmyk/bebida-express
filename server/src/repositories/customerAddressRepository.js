@@ -1,8 +1,16 @@
 // ============================================================
 // customerAddressRepository.js — Acesso a dados da tabela customer_addresses
 // ============================================================
+// Campos: customer_id, label, cep, street, number, complement,
+// district, city, state, reference, lat, lng.
+// ============================================================
 
 import { pool } from '../db/index.js';
+
+const ALLOWED_FIELDS = [
+  'label', 'cep', 'street', 'number', 'complement',
+  'district', 'city', 'state', 'reference', 'lat', 'lng',
+];
 
 export const customerAddressRepository = {
   async findByCustomerId(customerId, client = pool) {
@@ -11,6 +19,11 @@ export const customerAddressRepository = {
       [customerId]
     );
     return rows;
+  },
+
+  async findById(id, client = pool) {
+    const { rows } = await client.query('SELECT * FROM customer_addresses WHERE id = $1', [id]);
+    return rows[0] || null;
   },
 
   async create(data, client = pool) {
@@ -35,5 +48,25 @@ export const customerAddressRepository = {
       ]
     );
     return rows[0];
+  },
+
+  async update(id, data, client = pool) {
+    const provided = ALLOWED_FIELDS.filter((f) => data[f] !== undefined);
+    if (provided.length === 0) {
+      return this.findById(id, client);
+    }
+    const setClauses = provided.map((f, i) => `${f} = $${i + 1}`);
+    const values = provided.map((f) => data[f]);
+    values.push(id);
+    const { rows } = await client.query(
+      `UPDATE customer_addresses SET ${setClauses.join(', ')} WHERE id = $${values.length} RETURNING *`,
+      values
+    );
+    return rows[0] || null;
+  },
+
+  async delete(id, client = pool) {
+    const { rowCount } = await client.query('DELETE FROM customer_addresses WHERE id = $1', [id]);
+    return rowCount > 0;
   },
 };

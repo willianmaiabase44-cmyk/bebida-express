@@ -1,12 +1,20 @@
+// ============================================================
+// routes/store-settings.js — Configurações da loja (singleton)
+// ============================================================
+// GET é público. PUT é admin.
+// ============================================================
+
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import { getSettings, updateSettings } from '../controllers/storeSettingsController.js';
 
 const router = Router();
 
-// GET /api/store-settings — buscar configurações da loja — PENDENTE
-router.get('/', notImplemented('Buscar configurações da loja'));
+// GET público
+router.get('/', getSettings);
 
-// PUT /api/store-settings — atualizar configurações (admin) — PENDENTE
-router.put('/', notImplemented('Atualizar configurações da loja'));
+// PUT admin
+router.put('/', authMiddleware, adminOnly, updateSettings);
 
 export default router;

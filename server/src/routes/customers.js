@@ -1,21 +1,21 @@
+// ============================================================
+// routes/customers.js — CRUD de clientes (admin)
+// ============================================================
+
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import { list, getById, create, update, remove } from '../controllers/customerController.js';
 
 const router = Router();
 
-// GET /api/customers — listar clientes (admin) — PENDENTE
-router.get('/', notImplemented('Listar clientes'));
+// Todas as rotas de clientes são admin-only
+router.use(authMiddleware, adminOnly);
 
-// GET /api/customers/:id — buscar cliente por ID — PENDENTE
-router.get('/:id', notImplemented('Buscar cliente por ID'));
-
-// POST /api/customers — criar cliente — PENDENTE
-router.post('/', notImplemented('Criar cliente'));
-
-// PUT /api/customers/:id — atualizar cliente — PENDENTE
-router.put('/:id', notImplemented('Atualizar cliente'));
-
-// DELETE /api/customers/:id — excluir cliente (admin) — PENDENTE
-router.delete('/:id', notImplemented('Excluir cliente'));
+router.get('/', list);
+router.get('/:id', getById);
+router.post('/', create);
+router.put('/:id', update);
+router.delete('/:id', remove);
 
 export default router;

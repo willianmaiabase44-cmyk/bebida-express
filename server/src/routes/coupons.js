@@ -1,24 +1,31 @@
+// ============================================================
+// routes/coupons.js — CRUD de cupons + validação
+// ============================================================
+// CRUD é admin. /validate é público (preview no checkout).
+// ============================================================
+
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import {
+  list,
+  getById,
+  create,
+  update,
+  remove,
+  validate,
+} from '../controllers/couponController.js';
 
 const router = Router();
 
-// GET /api/coupons — listar cupons (admin) — PENDENTE
-router.get('/', notImplemented('Listar cupons'));
+// POST /api/coupons/validate — público (deve vir ANTES de /:id)
+router.post('/validate', validate);
 
-// GET /api/coupons/:id — buscar cupom por ID — PENDENTE
-router.get('/:id', notImplemented('Buscar cupom por ID'));
-
-// POST /api/coupons — criar cupom (admin) — PENDENTE
-router.post('/', notImplemented('Criar cupom'));
-
-// PUT /api/coupons/:id — atualizar cupom (admin) — PENDENTE
-router.put('/:id', notImplemented('Atualizar cupom'));
-
-// DELETE /api/coupons/:id — excluir cupom (admin) — PENDENTE
-router.delete('/:id', notImplemented('Excluir cupom'));
-
-// POST /api/coupons/validate — validar cupom (preview no checkout) — PENDENTE
-router.post('/validate', notImplemented('Validar cupom'));
+// CRUD — admin
+router.get('/', authMiddleware, adminOnly, list);
+router.get('/:id', authMiddleware, adminOnly, getById);
+router.post('/', authMiddleware, adminOnly, create);
+router.put('/:id', authMiddleware, adminOnly, update);
+router.delete('/:id', authMiddleware, adminOnly, remove);
 
 export default router;
