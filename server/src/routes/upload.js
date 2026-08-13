@@ -41,15 +41,22 @@ const router = Router();
 
 // POST /api/upload — upload de imagem (produto, banner, etc.)
 // Campo esperado: file
-router.post('/', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'Nenhum arquivo enviado. Use o campo "file".' });
-  }
-  const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-  res.json({
-    file_url: url,
-    filename: req.file.filename,
-    size: req.file.size,
+// Wrapper: captura erros do Multer (file filter, tamanho) e retorna 400/413
+router.post('/', (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+      return res.status(status).json({ error: err.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhum arquivo enviado. Use o campo "file".' });
+    }
+    const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    res.json({
+      file_url: url,
+      filename: req.file.filename,
+      size: req.file.size,
+    });
   });
 });
 

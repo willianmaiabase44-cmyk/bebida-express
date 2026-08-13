@@ -1,21 +1,28 @@
+// ============================================================
+// products.js — Rotas de produtos
+// ============================================================
+// GET    /api/products        — público (só active=true por padrão)
+// GET    /api/products/:id    — público
+// POST   /api/products        — admin
+// PUT    /api/products/:id    — admin
+// DELETE /api/products/:id    — admin
+// ============================================================
+
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import { authMiddleware, optionalAuth } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import * as productController from '../controllers/productController.js';
 
 const router = Router();
 
-// GET /api/products — listar produtos (catálogo público)
-router.get('/', notImplemented('Listar produtos'));
+// Público (optionalAuth permite admin ver inativos com include_inactive=true)
+router.get('/', optionalAuth, asyncHandler(productController.list));
+router.get('/:id', optionalAuth, asyncHandler(productController.getById));
 
-// GET /api/products/:id — buscar produto por ID
-router.get('/:id', notImplemented('Buscar produto por ID'));
-
-// POST /api/products — criar produto (admin) — PENDENTE
-router.post('/', notImplemented('Criar produto'));
-
-// PUT /api/products/:id — atualizar produto (admin) — PENDENTE
-router.put('/:id', notImplemented('Atualizar produto'));
-
-// DELETE /api/products/:id — excluir produto (admin) — PENDENTE
-router.delete('/:id', notImplemented('Excluir produto'));
+// Admin
+router.post('/', authMiddleware, adminOnly, asyncHandler(productController.create));
+router.put('/:id', authMiddleware, adminOnly, asyncHandler(productController.update));
+router.delete('/:id', authMiddleware, adminOnly, asyncHandler(productController.remove));
 
 export default router;

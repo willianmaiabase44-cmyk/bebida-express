@@ -1,21 +1,13 @@
 // ============================================================
-// Repositórios — camada de acesso a dados (a implementar Etapa 2)
+// Repositórios — camada de acesso a dados
 // ============================================================
 // Cada repositório encapsula queries SQL de uma entidade.
 // Os services chamam os repositórios — controllers chamam os services.
-//
-// Padrão a seguir:
-//
-//   export const productRepository = {
-//     findAll: async (client = pool) => { ... },
-//     findById: async (id, client = pool) => { ... },
-//     create: async (data, client = pool) => { ... },
-//     update: async (id, data, client = pool) => { ... },
-//     delete: async (id, client = pool) => { ... },
-//   };
-//
-// O parâmetro `client` permite reutilizar a mesma conexão dentro de
-// transações (withTransaction passa o client da transação).
+// NUNCA colocar SQL diretamente nas rotas.
 // ============================================================
 
-// STATUS: PENDENTE — Etapa 2
+export { userRepository } from './userRepository.js';
+export { customerRepository } from './customerRepository.js';
+export { customerAddressRepository } from './customerAddressRepository.js';
+export { deliveryDriverRepository } from './deliveryDriverRepository.js';
+export { productRepository } from './productRepository.js';

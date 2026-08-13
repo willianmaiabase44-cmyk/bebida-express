@@ -22,6 +22,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Arquivos estáticos (uploads servidos pelo próprio backend)
 const uploadDir = path.resolve(__dirname, '..', config.upload.dir);
+// Garante que o diretório de uploads existe
+import { mkdirSync } from 'fs';
+mkdirSync(uploadDir, { recursive: true });
 app.use('/uploads', express.static(uploadDir));
 
 // Rotas da API
