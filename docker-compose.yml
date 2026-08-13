@@ -17,10 +17,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    # Porta exposta para rodar migrations a partir do host (teste da Etapa 1)
-    # Em produção, comente estas linhas para não expor o PostgreSQL
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+    # NÃO expõe a porta para a internet — apenas interno na rede do compose
+    # Se precisar acessar localmente para debug, descomente:
+    # ports:
+    #   - "${POSTGRES_PORT:-5432}:5432"
     networks:
       - smoke-net
     healthcheck:
