@@ -43,6 +43,7 @@ import Deliveries from '@/pages/admin/Deliveries';
 import Orders from '@/pages/admin/Orders';
 import DeliverySettings from '@/pages/admin/DeliverySettings';
 import DeliveryReviews from '@/pages/admin/DeliveryReviews';
+import AccessLinks from '@/pages/admin/AccessLinks';
 
 // Motoboy pages
 import MotoboyLogin from '@/pages/motoboy/MotoboyLogin';
@@ -116,6 +117,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/quick-update" element={<QuickUpdate />} />
           <Route path="/admin/reports" element={<Reports />} />
           <Route path="/admin/reports/:type" element={<ReportView />} />
+          <Route path="/admin/access-links" element={<AccessLinks />} />
         </Route>
       </Route>
 

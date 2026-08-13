@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ArrowLeftRight, Tag, BarChart3, LogOut, Menu, X, Store, Zap, ShoppingCart, Bike, MapPin, ClipboardList, Settings, Truck } from 'lucide-react';
+import { LayoutDashboard, Package, ArrowLeftRight, Tag, BarChart3, LogOut, Menu, X, Store, Zap, ShoppingCart, Bike, MapPin, ClipboardList, Settings, Truck, Link as LinkIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { path: '/admin/deliveries', icon: MapPin, label: 'Entregas' },
   { path: '/admin/reviews', icon: BarChart3, label: 'Avaliações' },
   { path: '/admin/reports', icon: BarChart3, label: 'Relatórios' },
+  { path: '/admin/access-links', icon: LinkIcon, label: 'Links de Acesso' },
 ];
 
 export default function AdminLayout() {
