@@ -1,27 +1,29 @@
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import * as motoboyController from '../controllers/motoboyController.js';
 
 const router = Router();
 
-// GET /api/motoboys — listar motoboys (admin) — PENDENTE
-router.get('/', notImplemented('Listar motoboys'));
+// ============================================================
+// CRUD de motoboys (admin only)
+// ============================================================
+router.get('/', authMiddleware, adminOnly, asyncHandler(motoboyController.list));
+router.post('/', authMiddleware, adminOnly, asyncHandler(motoboyController.create));
 
-// GET /api/motoboys/:id — buscar motoboy por ID — PENDENTE
-router.get('/:id', notImplemented('Buscar motoboy por ID'));
+// GET /api/motoboys/reviews — todas as avaliações agregadas (admin)
+// Deve vir ANTES de /:id para não conflitar
+router.get('/reviews', authMiddleware, adminOnly, asyncHandler(motoboyController.getAllReviews));
 
-// POST /api/motoboys — criar motoboy (admin) — PENDENTE
-router.post('/', notImplemented('Criar motoboy'));
+router.get('/:id', authMiddleware, adminOnly, asyncHandler(motoboyController.getById));
+router.put('/:id', authMiddleware, adminOnly, asyncHandler(motoboyController.update));
+router.delete('/:id', authMiddleware, adminOnly, asyncHandler(motoboyController.remove));
 
-// PUT /api/motoboys/:id — atualizar motoboy (admin) — PENDENTE
-router.put('/:id', notImplemented('Atualizar motoboy'));
-
-// DELETE /api/motoboys/:id — excluir motoboy (admin) — PENDENTE
-router.delete('/:id', notImplemented('Excluir motoboy'));
-
-// GET /api/motoboys/:id/orders — pedidos do motoboy — PENDENTE
-router.get('/:id/orders', notImplemented('Pedidos do motoboy'));
-
-// GET /api/motoboys/:id/reviews — avaliações do motoboy — PENDENTE
-router.get('/:id/reviews', notImplemented('Avaliações do motoboy'));
+// ============================================================
+// Pedidos e avaliações do motoboy (motoboy ou admin)
+// ============================================================
+router.get('/:id/orders', authMiddleware, asyncHandler(motoboyController.getOrders));
+router.get('/:id/reviews', authMiddleware, asyncHandler(motoboyController.getReviews));
 
 export default router;

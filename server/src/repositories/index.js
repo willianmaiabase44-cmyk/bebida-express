@@ -15,3 +15,5 @@ export { storeSettingsRepository } from './storeSettingsRepository.js';
 export { couponRepository } from './couponRepository.js';
 export { orderRepository } from './orderRepository.js';
 export { stockMovementRepository } from './stockMovementRepository.js';
+export { deliveryRepository } from './deliveryRepository.js';
+export { deliveryReviewRepository } from './deliveryReviewRepository.js';

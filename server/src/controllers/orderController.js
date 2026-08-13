@@ -38,3 +38,35 @@ export function getOrderById(req, res, next) {
     .then((order) => res.json(order))
     .catch(next);
 }
+
+// PATCH /api/orders/:id/assign-driver — designar motoboy (admin)
+export function assignDriver(req, res, next) {
+  orderService
+    .assignDriver(req.params.id, req.body.motoboy_id, req.user)
+    .then((result) => res.json(result))
+    .catch(next);
+}
+
+// PATCH /api/orders/:id/accept-delivery — aceitar entrega (motoboy)
+export function acceptDelivery(req, res, next) {
+  orderService
+    .acceptDelivery(req.params.id, req.user)
+    .then((result) => res.json(result))
+    .catch(next);
+}
+
+// PATCH /api/orders/:id/deliver — marcar entregue (motoboy)
+export function deliverOrder(req, res, next) {
+  orderService
+    .deliverOrder(req.params.id, req.user)
+    .then((result) => res.json(result))
+    .catch(next);
+}
+
+// PATCH /api/orders/:id/status — alterar status (admin)
+export function updateStatus(req, res, next) {
+  orderService
+    .updateStatus(req.params.id, req.body.status, req.user)
+    .then((result) => res.json(result))
+    .catch(next);
+}

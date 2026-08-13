@@ -23,6 +23,7 @@ import { customerRepository } from '../repositories/customerRepository.js';
 import { customerAddressRepository } from '../repositories/customerAddressRepository.js';
 import { calculateFreight } from './freightService.js';
 import { buildFullAddress } from '../utils/geo.js';
+import { orderStatusService } from './orderStatusService.js';
 
 function httpError(message, status) {
   const err = new Error(message);
@@ -318,6 +319,206 @@ export const orderService = {
     if (currentUser.type === 'customer' && order.customer_id !== currentUser.id) {
       throw httpError('Acesso negado', 403);
     }
+    // Motoboy só pode ver pedidos designados a ele
+    if (currentUser.type === 'motoboy' && order.motoboy_id !== currentUser.id) {
+      throw httpError('Acesso negado', 403);
+    }
     return order;
+  },
+
+  // ============================================================
+  // PATCH /api/orders/:id/assign-driver — ATRIBUIR MOTOBOY (admin)
+  // Transação atômica: lock order + lock driver
+  // ============================================================
+  async assignDriver(orderId, motoboyId, currentUser) {
+    if (currentUser.type !== 'admin') {
+      throw httpError('Apenas administradores podem designar motoboys', 403);
+    }
+    if (!motoboyId) throw httpError('Motoboy é obrigatório', 400);
+
+    return withTransaction(async (client) => {
+      // 1. Lock pedido FOR UPDATE
+      const { rows: orderRows } = await client.query(
+        'SELECT * FROM orders WHERE id = $1 FOR UPDATE',
+        [orderId]
+      );
+      const order = orderRows[0];
+      if (!order) throw httpError('Pedido não encontrado', 404);
+
+      // 2. Status válido para atribuição (pré-entrega)
+      const validStatuses = ['novo', 'confirmado', 'em_preparacao', 'pronto'];
+      if (!validStatuses.includes(order.status)) {
+        throw httpError(`Pedido com status "${order.status}" não pode receber atribuição`, 400);
+      }
+
+      // 3. Lock motoboy FOR UPDATE
+      const { rows: driverRows } = await client.query(
+        'SELECT * FROM delivery_drivers WHERE id = $1 FOR UPDATE',
+        [motoboyId]
+      );
+      const driver = driverRows[0];
+      if (!driver) throw httpError('Motoboy não encontrado', 404);
+      if (!driver.active) throw httpError('Motoboy inativo', 400);
+
+      // 4. Atualizar pedido (preserva regra Base44: status → saiu_para_entrega)
+      const now = new Date().toISOString();
+      const historyEntry = {
+        status: 'saiu_para_entrega',
+        date: now,
+        by: `admin — designou ${driver.name}`,
+      };
+
+      await client.query(
+        `UPDATE orders
+           SET motoboy_id = $2, motoboy_name = $3, motoboy_assigned_at = $4, accepted_at = $4,
+               status = 'saiu_para_entrega',
+               status_history = status_history || $5::jsonb
+         WHERE id = $1`,
+        [orderId, driver.id, driver.name, now, JSON.stringify([historyEntry])]
+      );
+
+      // 5. Motoboy → ocupado
+      await client.query(
+        'UPDATE delivery_drivers SET status = $2 WHERE id = $1',
+        [driver.id, 'ocupado']
+      );
+
+      return { success: true, motoboy_name: driver.name };
+    });
+  },
+
+  // ============================================================
+  // PATCH /api/orders/:id/accept-delivery — ACEITAR ENTREGA (motoboy)
+  // Transação atômica: lock order
+  // ============================================================
+  async acceptDelivery(orderId, currentUser) {
+    if (currentUser.type !== 'motoboy') {
+      throw httpError('Apenas motoboys podem aceitar entregas', 403);
+    }
+
+    return withTransaction(async (client) => {
+      const { rows: orderRows } = await client.query(
+        'SELECT * FROM orders WHERE id = $1 FOR UPDATE',
+        [orderId]
+      );
+      const order = orderRows[0];
+      if (!order) throw httpError('Pedido não encontrado', 404);
+
+      // Motoboy A nunca aceita pedido do motoboy B
+      if (order.motoboy_id !== currentUser.id) {
+        throw httpError('Este pedido não foi designado para você', 403);
+      }
+
+      // Status deve ser pronto (aguardando aceite)
+      if (order.status !== 'pronto') {
+        throw httpError('Pedido não está aguardando aceite', 400);
+      }
+
+      const now = new Date().toISOString();
+      const historyEntry = { status: 'saiu_para_entrega', date: now, by: 'motoboy' };
+
+      await client.query(
+        `UPDATE orders
+           SET status = 'saiu_para_entrega', accepted_at = $2,
+               status_history = status_history || $3::jsonb
+         WHERE id = $1`,
+        [orderId, now, JSON.stringify([historyEntry])]
+      );
+
+      // Motoboy → ocupado
+      await client.query(
+        'UPDATE delivery_drivers SET status = $2 WHERE id = $1',
+        [order.motoboy_id, 'ocupado']
+      );
+
+      return { success: true };
+    });
+  },
+
+  // ============================================================
+  // PATCH /api/orders/:id/deliver — MARCAR ENTREGUE (motoboy)
+  // Transação atômica: lock order + atomic increment
+  // ============================================================
+  async deliverOrder(orderId, currentUser) {
+    if (currentUser.type !== 'motoboy') {
+      throw httpError('Apenas motoboys podem marcar entregas', 403);
+    }
+
+    return withTransaction(async (client) => {
+      const { rows: orderRows } = await client.query(
+        'SELECT * FROM orders WHERE id = $1 FOR UPDATE',
+        [orderId]
+      );
+      const order = orderRows[0];
+      if (!order) throw httpError('Pedido não encontrado', 404);
+
+      if (order.motoboy_id !== currentUser.id) {
+        throw httpError('Este pedido não foi designado para você', 403);
+      }
+
+      if (order.status !== 'saiu_para_entrega') {
+        throw httpError('Pedido não está em rota de entrega', 400);
+      }
+
+      const now = new Date().toISOString();
+      const historyEntry = { status: 'entregue', date: now, by: 'motoboy' };
+
+      await client.query(
+        `UPDATE orders
+           SET status = 'entregue', delivered_at = $2,
+               status_history = status_history || $3::jsonb
+         WHERE id = $1`,
+        [orderId, now, JSON.stringify([historyEntry])]
+      );
+
+      // Incremento atômico + status disponível
+      await client.query(
+        `UPDATE delivery_drivers
+           SET status = 'disponivel', total_deliveries = total_deliveries + 1
+         WHERE id = $1`,
+        [order.motoboy_id]
+      );
+
+      return { success: true };
+    });
+  },
+
+  // ============================================================
+  // PATCH /api/orders/:id/status — ALTERAR STATUS (admin)
+  // Máquina de estados centralizada em orderStatusService
+  // ============================================================
+  async updateStatus(orderId, newStatus, currentUser) {
+    if (currentUser.type !== 'admin') {
+      throw httpError('Apenas administradores podem alterar status', 403);
+    }
+    if (!orderStatusService.isValidStatus(newStatus)) {
+      throw httpError('Status inválido', 400);
+    }
+
+    return withTransaction(async (client) => {
+      const { rows: orderRows } = await client.query(
+        'SELECT * FROM orders WHERE id = $1 FOR UPDATE',
+        [orderId]
+      );
+      const order = orderRows[0];
+      if (!order) throw httpError('Pedido não encontrado', 404);
+
+      if (!orderStatusService.canTransition(order.status, newStatus)) {
+        throw httpError(`Transição inválida: ${order.status} → ${newStatus}`, 400);
+      }
+
+      const now = new Date().toISOString();
+      const by = currentUser.type === 'admin' ? 'admin' : currentUser.name || 'sistema';
+      const historyEntry = { status: newStatus, date: now, by };
+
+      await client.query(
+        `UPDATE orders
+           SET status = $2, status_history = status_history || $3::jsonb
+         WHERE id = $1`,
+        [orderId, newStatus, JSON.stringify([historyEntry])]
+      );
+
+      return { success: true, status: newStatus };
+    });
   },
 };

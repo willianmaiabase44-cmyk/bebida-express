@@ -111,4 +111,12 @@ export const orderRepository = {
     );
     return rows.map(formatOrder);
   },
+
+  async findByMotoboyId(motoboyId, client = pool) {
+    const { rows } = await client.query(
+      'SELECT * FROM orders WHERE motoboy_id = $1 ORDER BY created_date DESC',
+      [motoboyId]
+    );
+    return rows.map(formatOrder);
+  },
 };

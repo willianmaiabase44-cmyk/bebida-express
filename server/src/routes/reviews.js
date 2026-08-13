@@ -1,21 +1,18 @@
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import * as reviewController from '../controllers/reviewController.js';
 
 const router = Router();
 
-// GET /api/reviews — listar avaliações (admin) — PENDENTE
-router.get('/', notImplemented('Listar avaliações'));
+// GET /api/reviews — listar avaliações (admin)
+router.get('/', authMiddleware, adminOnly, asyncHandler(reviewController.list));
 
-// GET /api/reviews/:id — buscar avaliação por ID — PENDENTE
-router.get('/:id', notImplemented('Buscar avaliação por ID'));
+// GET /api/reviews/:id — buscar avaliação por ID (admin)
+router.get('/:id', authMiddleware, adminOnly, asyncHandler(reviewController.getById));
 
-// POST /api/reviews — criar avaliação de entrega — PENDENTE
-router.post('/', notImplemented('Criar avaliação'));
-
-// PUT /api/reviews/:id — atualizar avaliação — PENDENTE
-router.put('/:id', notImplemented('Atualizar avaliação'));
-
-// DELETE /api/reviews/:id — excluir avaliação — PENDENTE
-router.delete('/:id', notImplemented('Excluir avaliação'));
+// POST /api/reviews — criar avaliação (cliente autenticado)
+router.post('/', authMiddleware, asyncHandler(reviewController.create));
 
 export default router;

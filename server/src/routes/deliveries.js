@@ -1,24 +1,17 @@
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import * as deliveryController from '../controllers/deliveryController.js';
 
 const router = Router();
 
-// GET /api/deliveries — listar entregas (admin) — PENDENTE
-router.get('/', notImplemented('Listar entregas'));
-
-// GET /api/deliveries/:id — buscar entrega por ID — PENDENTE
-router.get('/:id', notImplemented('Buscar entrega por ID'));
-
-// POST /api/deliveries — criar entrega — PENDENTE
-router.post('/', notImplemented('Criar entrega'));
-
-// PUT /api/deliveries/:id — atualizar entrega — PENDENTE
-router.put('/:id', notImplemented('Atualizar entrega'));
-
-// PATCH /api/deliveries/:id/status — alterar status da entrega — PENDENTE
-router.patch('/:id/status', notImplemented('Alterar status da entrega'));
-
-// DELETE /api/deliveries/:id — excluir entrega — PENDENTE
-router.delete('/:id', notImplemented('Excluir entrega'));
+// CRUD de entregas (admin only)
+router.get('/', authMiddleware, adminOnly, asyncHandler(deliveryController.list));
+router.post('/', authMiddleware, adminOnly, asyncHandler(deliveryController.create));
+router.get('/:id', authMiddleware, adminOnly, asyncHandler(deliveryController.getById));
+router.put('/:id', authMiddleware, adminOnly, asyncHandler(deliveryController.update));
+router.patch('/:id/status', authMiddleware, adminOnly, asyncHandler(deliveryController.updateStatus));
+router.delete('/:id', authMiddleware, adminOnly, asyncHandler(deliveryController.remove));
 
 export default router;

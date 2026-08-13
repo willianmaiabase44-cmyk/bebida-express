@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
 import { adminOnly } from '../middleware/adminOnly.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { notImplemented } from '../middleware/notImplemented.js';
 import * as orderController from '../controllers/orderController.js';
 
 const router = Router();
@@ -21,10 +20,19 @@ router.get('/customer/:customerId', authMiddleware, asyncHandler(orderController
 router.get('/:id', authMiddleware, asyncHandler(orderController.getOrderById));
 
 // ============================================================
-// Rotas abaixo permanecem não implementadas (próxima etapa)
+// Etapa 5 — Gestão de entrega e status
 // ============================================================
-router.patch('/:id/status', notImplemented('Alterar status do pedido'));
-router.post('/:id/assign', notImplemented('Designar motoboy'));
-router.post('/:id/deliver', notImplemented('Marcar como entregue'));
+
+// PATCH /api/orders/:id/status — alterar status (admin) — máquina de estados
+router.patch('/:id/status', authMiddleware, adminOnly, asyncHandler(orderController.updateStatus));
+
+// PATCH /api/orders/:id/assign-driver — designar motoboy (admin) — transação atômica
+router.patch('/:id/assign-driver', authMiddleware, adminOnly, asyncHandler(orderController.assignDriver));
+
+// PATCH /api/orders/:id/accept-delivery — aceitar entrega (motoboy) — transação atômica
+router.patch('/:id/accept-delivery', authMiddleware, asyncHandler(orderController.acceptDelivery));
+
+// PATCH /api/orders/:id/deliver — marcar entregue (motoboy) — transação atômica
+router.patch('/:id/deliver', authMiddleware, asyncHandler(orderController.deliverOrder));
 
 export default router;
