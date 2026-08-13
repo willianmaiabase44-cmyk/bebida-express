@@ -1,0 +1,68 @@
+{
+  "name": "Supplier",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do fornecedor / empresa"
+    },
+    "contact_name": {
+      "type": "string",
+      "description": "Nome do representante / contato"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefone / WhatsApp"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email do fornecedor"
+    },
+    "cnpj": {
+      "type": "string",
+      "description": "CNPJ do fornecedor"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categoria principal de fornecimento (ex: cervejas, destilados, refrigerantes)"
+    },
+    "address": {
+      "type": "string",
+      "description": "Endere\u00e7o do fornecedor"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Fornecedor ativo"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

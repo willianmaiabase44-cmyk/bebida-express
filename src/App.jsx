@@ -31,6 +31,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import AdminLayout from '@/components/admin/AdminLayout';
 import Dashboard from '@/pages/admin/Dashboard';
 import Products from '@/pages/admin/Products';
+import Suppliers from '@/pages/admin/Suppliers';
 import StockManagement from '@/pages/admin/StockManagement';
 import Promotions from '@/pages/admin/Promotions';
 import Reports from '@/pages/admin/Reports';
@@ -103,6 +104,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/admin/orders" element={<Orders />} />
           <Route path="/admin/products" element={<Products />} />
+          <Route path="/admin/suppliers" element={<Suppliers />} />
           <Route path="/admin/stock" element={<StockManagement />} />
           <Route path="/admin/promotions" element={<Promotions />} />
           <Route path="/admin/pos" element={<POS />} />
