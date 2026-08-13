@@ -11,7 +11,8 @@ import { useCart } from "@/context/CartContext";
 import { useCustomer } from "@/context/CustomerContext";
 import { formatPrice } from "@/lib/constants";
 import { toast } from "sonner";
-import { Loader2, MapPin, Plus, Truck, ShoppingBag, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader2, MapPin, Plus, Truck, ShoppingBag, CheckCircle2, ArrowLeft, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AddressForm from "@/components/checkout/AddressForm";
 
 const PAYMENT_OPTIONS = [
@@ -34,6 +35,8 @@ export default function Checkout() {
   const [changeFor, setChangeFor] = useState("");
   const [notes, setNotes] = useState("");
   const [placing, setPlacing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadAddresses = async () => {
     if (!customer) return;
@@ -81,6 +84,26 @@ export default function Checkout() {
       loadAddresses();
     } catch (e) {
       toast.error("Erro ao salvar endereço");
+    }
+  };
+
+  const handleDeleteAddress = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await base44.functions.invoke("manageCustomerAddress", {
+        action: "delete",
+        customer_id: customer.id,
+        address_id: deleteTarget.id,
+      });
+      toast.success("Endereço removido");
+      if (selectedAddressId === deleteTarget.id) setSelectedAddressId(null);
+      setDeleteTarget(null);
+      loadAddresses();
+    } catch (e) {
+      toast.error("Erro ao remover endereço");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -162,13 +185,18 @@ export default function Checkout() {
             <>
               <div className="space-y-2">
                 {addresses.map(addr => (
-                  <label key={addr.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedAddressId === addr.id ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground"}`}>
-                    <input type="radio" checked={selectedAddressId === addr.id} onChange={() => setSelectedAddressId(addr.id)} className="mt-1 accent-primary" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{addr.label}</p>
-                      <p className="text-xs text-muted-foreground">{addr.street}, {addr.number} - {addr.district}, {addr.city} - {addr.state}</p>
-                    </div>
-                  </label>
+                  <div key={addr.id} className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${selectedAddressId === addr.id ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground"}`}>
+                    <label className="flex items-start gap-3 flex-1 min-w-0 cursor-pointer">
+                      <input type="radio" checked={selectedAddressId === addr.id} onChange={() => setSelectedAddressId(addr.id)} className="mt-1 accent-primary" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{addr.label}</p>
+                        <p className="text-xs text-muted-foreground">{addr.street}, {addr.number} - {addr.district}, {addr.city} - {addr.state}</p>
+                      </div>
+                    </label>
+                    <button type="button" onClick={() => setDeleteTarget(addr)} className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" aria-label="Excluir endereço">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 ))}
               </div>
               <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -254,6 +282,23 @@ export default function Checkout() {
         {placing ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
         {placing ? "Confirmando..." : `Confirmar Pedido · ${formatPrice(grandTotal)}`}
       </Button>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="bg-background border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir endereço?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget && `"${deleteTarget.label}" — ${deleteTarget.street}, ${deleteTarget.number}`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAddress} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
