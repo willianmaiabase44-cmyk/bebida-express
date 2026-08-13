@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { MapPin, Save, Loader2, Truck, Navigation, MapPinCheck } from "lucide-react";
 import { formatPrice } from "@/lib/constants";
 import { lookupCep, formatCep } from "@/lib/cep";
+import FreightTableEditor from "@/components/admin/FreightTableEditor";
 
 const UF_OPTIONS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
 
@@ -23,7 +24,7 @@ export default function DeliverySettings() {
   const [form, setForm] = useState({
     store_name: "Smoke Bebidas",
     cep: "", street: "", number: "", complement: "", district: "", city: "", state: "RS",
-    lat: null, lng: null, freight_per_km: 2.5, min_freight: 0, free_freight_threshold: 0,
+    lat: null, lng: null, freight_table: [], freight_per_km: 2.5, min_freight: 0, free_freight_threshold: 0,
     max_delivery_radius_km: 0, estimated_delivery_minutes: 30,
     delivery_enabled: true, delivery_city: "Gravataí", delivery_state: "RS",
   });
@@ -49,6 +50,7 @@ export default function DeliverySettings() {
         complement: settings.complement || "", district: settings.district || "",
         city: settings.city || "", state: settings.state || "RS",
         lat: settings.lat, lng: settings.lng,
+        freight_table: settings.freight_table || [],
         freight_per_km: settings.freight_per_km ?? 2.5,
         min_freight: settings.min_freight ?? 0,
         free_freight_threshold: settings.free_freight_threshold ?? 0,
@@ -232,50 +234,32 @@ export default function DeliverySettings() {
 
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg"><Truck className="w-5 h-5 text-primary" /> Frete por KM</CardTitle>
-              <CardDescription>Valor cobrado por quilômetro de rota</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-lg"><Truck className="w-5 h-5 text-primary" /> Tabela de Frete por Distância</CardTitle>
+              <CardDescription>Cadastre faixas de distância e valores. A maior faixa é o limite máximo de entrega.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label>Valor por KM (R$)</Label>
-                <Input type="number" step="0.01" value={form.freight_per_km} onChange={e => setForm(f => ({ ...f, freight_per_km: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label>Frete mínimo (R$) — opcional</Label>
-                <Input type="number" step="0.01" value={form.min_freight} onChange={e => setForm(f => ({ ...f, min_freight: parseFloat(e.target.value) || 0 }))} />
-                <p className="text-xs text-muted-foreground mt-1">Se 0, sem valor mínimo</p>
-              </div>
-              <div>
-                <Label>Frete grátis acima de (R$) — opcional</Label>
-                <Input type="number" step="0.01" value={form.free_freight_threshold} onChange={e => setForm(f => ({ ...f, free_freight_threshold: parseFloat(e.target.value) || 0 }))} />
-                <p className="text-xs text-muted-foreground mt-1">Pedidos acima deste valor não pagam frete. Se 0, desativado.</p>
-              </div>
-              <div>
-                <Label>Raio máximo de entrega (KM) — opcional</Label>
-                <Input type="number" step="0.1" value={form.max_delivery_radius_km} onChange={e => setForm(f => ({ ...f, max_delivery_radius_km: parseFloat(e.target.value) || 0 }))} />
-                <p className="text-xs text-muted-foreground mt-1">Endereços além desta distância são recusados. Se 0, sem limite.</p>
-              </div>
-              <div>
-                <Label>Tempo estimado de entrega (minutos)</Label>
-                <Input type="number" step="1" value={form.estimated_delivery_minutes} onChange={e => setForm(f => ({ ...f, estimated_delivery_minutes: parseInt(e.target.value) || 30 }))} />
-                <p className="text-xs text-muted-foreground mt-1">Tempo médio exibido para o cliente no checkout</p>
-              </div>
-              <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
+              <FreightTableEditor
+                value={form.freight_table}
+                onChange={(table) => setForm(f => ({ ...f, freight_table: table }))}
+              />
+              <div className="border-t border-border pt-4 space-y-4">
                 <div>
-                  <Label className="cursor-pointer">Entregas habilitadas</Label>
-                  <p className="text-xs text-muted-foreground">Clientes podem fazer pedidos online</p>
+                  <Label>Frete grátis acima de (R$) — opcional</Label>
+                  <Input type="number" step="0.01" value={form.free_freight_threshold} onChange={e => setForm(f => ({ ...f, free_freight_threshold: parseFloat(e.target.value) || 0 }))} />
+                  <p className="text-xs text-muted-foreground mt-1">Pedidos acima deste valor não pagam frete. Se 0, desativado.</p>
                 </div>
-                <Switch checked={form.delivery_enabled} onCheckedChange={v => setForm(f => ({ ...f, delivery_enabled: v }))} />
-              </div>
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-sm space-y-1">
-                <p className="text-muted-foreground mb-1">Exemplo de cálculo:</p>
-                <p>6 km × {formatPrice(form.freight_per_km)} = <span className="font-bold text-primary">{formatPrice(6 * form.freight_per_km)}</span></p>
-                {form.free_freight_threshold > 0 && (
-                  <p className="text-muted-foreground">Pedidos acima de <span className="font-bold text-primary">{formatPrice(form.free_freight_threshold)}</span> = <span className="font-bold text-primary">Frete grátis</span></p>
-                )}
-                {form.max_delivery_radius_km > 0 && (
-                  <p className="text-muted-foreground">Raio máximo: <span className="font-bold text-primary">{form.max_delivery_radius_km} km</span></p>
-                )}
+                <div>
+                  <Label>Tempo estimado de entrega (minutos)</Label>
+                  <Input type="number" step="1" value={form.estimated_delivery_minutes} onChange={e => setForm(f => ({ ...f, estimated_delivery_minutes: parseInt(e.target.value) || 30 }))} />
+                  <p className="text-xs text-muted-foreground mt-1">Tempo médio exibido para o cliente no checkout</p>
+                </div>
+                <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
+                  <div>
+                    <Label className="cursor-pointer">Entregas habilitadas</Label>
+                    <p className="text-xs text-muted-foreground">Clientes podem fazer pedidos online</p>
+                  </div>
+                  <Switch checked={form.delivery_enabled} onCheckedChange={v => setForm(f => ({ ...f, delivery_enabled: v }))} />
+                </div>
               </div>
             </CardContent>
           </Card>

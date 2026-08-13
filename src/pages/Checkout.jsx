@@ -195,7 +195,9 @@ export default function Checkout() {
                   <span>Distância: <strong>{freightData.distance_km} km</strong></span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-muted-foreground">{formatPrice(freightData.freight_per_km)}/km</span>
+                  <span className="text-xs text-muted-foreground">
+                    {freightData.freight_mode === "table" ? `até ${freightData.freight_range_km} km` : `${formatPrice(freightData.freight_per_km)}/km`}
+                  </span>
                   <p className="font-bold text-primary text-lg">{formatPrice(freight)}</p>
                 </div>
               </div>

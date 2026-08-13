@@ -58,12 +58,39 @@ export default async function (req) {
 
     const route = await calculateRoute(storeLat, storeLng, clientLat, clientLng);
     const distanceKm = route.distance / 1000;
-    const freightPerKm = settings.freight_per_km || 0;
+    const roundedKm = Math.round(distanceKm * 10) / 10;
 
-    // Valida raio máximo de entrega
+    // Tabela de frete por distância (prioridade sobre o modo por KM)
+    const freightTable = (settings.freight_table || []).filter(r => r.distance_km != null && r.price != null);
+    if (freightTable.length > 0) {
+      const sorted = [...freightTable].sort((a, b) => a.distance_km - b.distance_km);
+      // Procura a menor faixa que comporta a distância calculada
+      const match = sorted.find(range => distanceKm <= range.distance_km);
+      if (!match) {
+        const maxRange = sorted[sorted.length - 1];
+        return Response.json({ error: `Desculpe, ainda não realizamos entregas neste endereço. Distância máxima de entrega: ${maxRange.distance_km} km.` }, { status: 403 });
+      }
+      return Response.json({
+        distance_km: roundedKm,
+        distance_meters: route.distance,
+        duration_seconds: route.duration,
+        freight: Math.round(match.price * 100) / 100,
+        freight_mode: "table",
+        freight_range_km: match.distance_km,
+        free_freight_threshold: settings.free_freight_threshold || 0,
+        estimated_delivery_minutes: settings.estimated_delivery_minutes || 30,
+        client_lat: clientLat,
+        client_lng: clientLng,
+        client_address: clientAddress,
+        route_geometry: route.geometry,
+      });
+    }
+
+    // Fallback: modo por KM (configuração legada)
+    const freightPerKm = settings.freight_per_km || 0;
     const maxRadius = settings.max_delivery_radius_km || 0;
     if (maxRadius > 0 && distanceKm > maxRadius) {
-      return Response.json({ error: `Distância de ${Math.round(distanceKm * 10) / 10} km excede o raio máximo de entrega de ${maxRadius} km` }, { status: 403 });
+      return Response.json({ error: `Distância de ${roundedKm} km excede o raio máximo de entrega de ${maxRadius} km` }, { status: 403 });
     }
 
     let freight = distanceKm * freightPerKm;
@@ -72,11 +99,12 @@ export default async function (req) {
     }
 
     return Response.json({
-      distance_km: Math.round(distanceKm * 10) / 10,
+      distance_km: roundedKm,
       distance_meters: route.distance,
       duration_seconds: route.duration,
       freight_per_km: freightPerKm,
       freight: Math.round(freight * 100) / 100,
+      freight_mode: "per_km",
       min_freight: settings.min_freight || 0,
       free_freight_threshold: settings.free_freight_threshold || 0,
       estimated_delivery_minutes: settings.estimated_delivery_minutes || 30,
