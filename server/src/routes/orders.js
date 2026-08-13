@@ -1,28 +1,30 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 import { notImplemented } from '../middleware/notImplemented.js';
+import * as orderController from '../controllers/orderController.js';
 
 const router = Router();
 
-// POST /api/orders — criar pedido (transação atômica) — PENDENTE
-// Futuramente: placeOrder dentro de withTransaction()
-router.post('/', notImplemented('Criar pedido (transação atômica)'));
+// POST /api/orders — criar pedido (transação atômica) — IMPLEMENTADO
+router.post('/', authMiddleware, asyncHandler(orderController.createOrder));
 
-// GET /api/orders — listar pedidos (admin) — PENDENTE
-router.get('/', notImplemented('Listar pedidos'));
+// GET /api/orders — listar pedidos (admin) — IMPLEMENTADO
+router.get('/', authMiddleware, adminOnly, asyncHandler(orderController.listOrders));
 
-// GET /api/orders/:id — buscar pedido por ID — PENDENTE
-router.get('/:id', notImplemented('Buscar pedido por ID'));
+// GET /api/orders/customer/:customerId — pedidos de um cliente — IMPLEMENTADO
+// Deve vir ANTES de /:id para não conflitar
+router.get('/customer/:customerId', authMiddleware, asyncHandler(orderController.getOrdersByCustomer));
 
-// GET /api/orders/customer/:customerId — pedidos de um cliente — PENDENTE
-router.get('/customer/:customerId', notImplemented('Pedidos do cliente'));
+// GET /api/orders/:id — buscar pedido por ID — IMPLEMENTADO
+router.get('/:id', authMiddleware, asyncHandler(orderController.getOrderById));
 
-// PATCH /api/orders/:id/status — alterar status (admin/motoboy) — PENDENTE
+// ============================================================
+// Rotas abaixo permanecem não implementadas (próxima etapa)
+// ============================================================
 router.patch('/:id/status', notImplemented('Alterar status do pedido'));
-
-// POST /api/orders/:id/assign — designar motoboy (admin) — PENDENTE
 router.post('/:id/assign', notImplemented('Designar motoboy'));
-
-// POST /api/orders/:id/deliver — marcar como entregue (motoboy) — PENDENTE
 router.post('/:id/deliver', notImplemented('Marcar como entregue'));
 
 export default router;
