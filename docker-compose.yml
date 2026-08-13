@@ -1,0 +1,75 @@
+# ============================================================
+# SMOKE BEBIDAS — Docker Compose
+# ============================================================
+# Portas configuráveis via .env para evitar conflitos na VPS.
+# PostgreSQL NÃO fica exposto na internet (apenas interno).
+# Volumes persistentes para banco e uploads.
+# ============================================================
+
+services:
+  # ===== PostgreSQL =====
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smoke_bebidas}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # NÃO expõe a porta para a internet — apenas interno na rede do compose
+    # Se precisar acessar localmente para debug, descomente:
+    # ports:
+    #   - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - smoke-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== Backend (Node.js + Express) =====
+  backend:
+    build: ./server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      BACKEND_PORT: ${BACKEND_PORT:-4000}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-smoke_bebidas}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-5173}}
+      UPLOAD_DIR: uploads
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-10}
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    volumes:
+      - uploads:/app/uploads
+    networks:
+      - smoke-net
+
+  # ===== Frontend (React + Vite) =====
+  # Descomente quando o frontend estiver pronto para build Docker
+  # frontend:
+  #   build: .
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - backend
+  #   environment:
+  #     VITE_API_URL: http://localhost:${BACKEND_PORT:-4000}/api
+  #   ports:
+  #     - "${FRONTEND_PORT:-5173}:80"
+  #   networks:
+  #     - smoke-net
+
+volumes:
+  pgdata:
+  uploads:
+
+networks:
+  smoke-net:
+    driver: bridge
