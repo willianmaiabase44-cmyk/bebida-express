@@ -1,0 +1,83 @@
+{
+  "name": "Coupon",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "C\u00f3digo do cupom (\u00fanico, mai\u00fasculo)"
+    },
+    "discount_percent": {
+      "type": "number",
+      "description": "Porcentagem de desconto (ex: 10 = 10%)"
+    },
+    "max_uses": {
+      "type": "number",
+      "default": 0,
+      "description": "Quantidade m\u00e1xima de usos total (0 = ilimitado)"
+    },
+    "per_customer_limit": {
+      "type": "number",
+      "default": 1,
+      "description": "Limite de uso por cliente (0 = ilimitado)"
+    },
+    "min_order_value": {
+      "type": "number",
+      "default": 0,
+      "description": "Valor m\u00ednimo do pedido para usar o cupom (0 = sem m\u00ednimo)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de in\u00edcio (opcional)"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de validade (opcional)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Cupom ativo"
+    },
+    "used_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Total de vezes que foi utilizado"
+    },
+    "used_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Lista de customer_id que usaram o cupom"
+    }
+  },
+  "required": [
+    "code",
+    "discount_percent"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

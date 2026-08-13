@@ -107,10 +107,14 @@
       "default": 0,
       "description": "Valor do frete"
     },
+    "coupon_code": {
+      "type": "string",
+      "description": "C\u00f3digo do cupom aplicado (vazio se nenhum)"
+    },
     "discount": {
       "type": "number",
       "default": 0,
-      "description": "Desconto aplicado"
+      "description": "Desconto aplicado (do cupom)"
     },
     "total": {
       "type": "number",

@@ -11,7 +11,7 @@ import { useCart } from "@/context/CartContext";
 import { useCustomer } from "@/context/CustomerContext";
 import { formatPrice } from "@/lib/constants";
 import { toast } from "sonner";
-import { Loader2, MapPin, Plus, Truck, ShoppingBag, CheckCircle2, ArrowLeft, Trash2 } from "lucide-react";
+import { Loader2, MapPin, Plus, Truck, ShoppingBag, CheckCircle2, ArrowLeft, Trash2, Tag } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AddressForm from "@/components/checkout/AddressForm";
 
@@ -37,6 +37,9 @@ export default function Checkout() {
   const [placing, setPlacing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const loadAddresses = async () => {
     if (!customer) return;
@@ -107,6 +110,35 @@ export default function Checkout() {
     }
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) { toast.error("Digite um cupom"); return; }
+    setValidatingCoupon(true);
+    try {
+      const res = await base44.functions.invoke("validateCoupon", {
+        coupon_code: couponCode.toUpperCase().trim(),
+        customer_id: customer.id,
+        subtotal: total,
+      });
+      if (res.data?.valid) {
+        setAppliedCoupon(res.data);
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data?.message || "Cupom inválido");
+        setAppliedCoupon(null);
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Cupom inválido");
+      setAppliedCoupon(null);
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+  };
+
   const handlePlaceOrder = async () => {
     if (!selectedAddressId) { toast.error("Selecione um endereço de entrega"); return; }
     if (!freightData) { toast.error("Aguarde o cálculo do frete"); return; }
@@ -126,6 +158,7 @@ export default function Checkout() {
         payment_method: paymentMethod,
         change_for: paymentMethod === "dinheiro" && changeFor ? parseFloat(changeFor) : null,
         notes,
+        coupon_code: appliedCoupon?.coupon_code || "",
       };
       const res = await base44.functions.invoke("placeOrder", payload);
       if (res.data?.success) {
@@ -156,7 +189,8 @@ export default function Checkout() {
   }
 
   const freight = freightData?.freight || 0;
-  const grandTotal = total + freight;
+  const discount = appliedCoupon?.discount || 0;
+  const grandTotal = Math.max(0, total - discount) + freight;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
@@ -235,6 +269,35 @@ export default function Checkout() {
       )}
 
       <Card className="bg-card border-border">
+        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> Cupom de Desconto</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          {appliedCoupon ? (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+              <div>
+                <p className="font-mono font-bold text-sm">{appliedCoupon.coupon_code}</p>
+                <p className="text-xs text-green-400">{appliedCoupon.discount_percent}% de desconto · -{formatPrice(appliedCoupon.discount)}</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleRemoveCoupon} className="text-muted-foreground hover:text-destructive">Remover</Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="DIGITE SEU CUPOM"
+                className="font-mono uppercase flex-1"
+                onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+              />
+              <Button onClick={handleApplyCoupon} disabled={validatingCoupon} variant="outline" className="gap-2">
+                {validatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : <Tag className="w-4 h-4" />}
+                Aplicar
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card border-border">
         <CardHeader className="pb-3"><CardTitle className="text-base">Forma de Pagamento</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -272,6 +335,9 @@ export default function Checkout() {
           ))}
           <div className="border-t border-border pt-3 space-y-1 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatPrice(total)}</span></div>
+            {discount > 0 && (
+              <div className="flex justify-between text-green-400"><span>Cupom {appliedCoupon.coupon_code} ({appliedCoupon.discount_percent}%)</span><span>- {formatPrice(discount)}</span></div>
+            )}
             <div className="flex justify-between"><span className="text-muted-foreground">Frete {freightData ? `(${freightData.distance_km} km)` : ""}</span><span>{freight > 0 ? formatPrice(freight) : "—"}</span></div>
             <div className="flex justify-between font-bold text-xl pt-1"><span>Total</span><span className="text-primary">{formatPrice(grandTotal)}</span></div>
           </div>

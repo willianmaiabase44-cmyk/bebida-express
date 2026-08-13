@@ -44,6 +44,7 @@ import Orders from '@/pages/admin/Orders';
 import DeliverySettings from '@/pages/admin/DeliverySettings';
 import DeliveryReviews from '@/pages/admin/DeliveryReviews';
 import AccessLinks from '@/pages/admin/AccessLinks';
+import Coupons from '@/pages/admin/Coupons';
 
 // Motoboy pages
 import MotoboyLogin from '@/pages/motoboy/MotoboyLogin';
@@ -114,6 +115,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/motoboys" element={<Motoboys />} />
           <Route path="/admin/deliveries" element={<Deliveries />} />
           <Route path="/admin/reviews" element={<DeliveryReviews />} />
+          <Route path="/admin/coupons" element={<Coupons />} />
           <Route path="/admin/quick-update" element={<QuickUpdate />} />
           <Route path="/admin/reports" element={<Reports />} />
           <Route path="/admin/reports/:type" element={<ReportView />} />

@@ -9,7 +9,7 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
 
     const body = await req.json();
-    const { items, address_id, customer_id, payment_method, change_for, notes } = body;
+    const { items, address_id, customer_id, payment_method, change_for, notes, coupon_code } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return Response.json({ error: "Carrinho vazio" }, { status: 400 });
@@ -132,7 +132,33 @@ export default async function (req) {
       freight = 0;
     }
 
-    const total = Math.round((subtotal + freight) * 100) / 100;
+    // Valida e aplica cupom de desconto (backend — não confia no frontend)
+    let discount = 0;
+    let appliedCouponCode = "";
+    if (coupon_code) {
+      const code = String(coupon_code).toUpperCase().trim();
+      const coupons = await base44.asServiceRole.entities.Coupon.filter({ code });
+      const coupon = coupons?.[0];
+      if (!coupon) return Response.json({ error: "Cupom não encontrado" }, { status: 400 });
+      if (!coupon.active) return Response.json({ error: "Cupom inativo" }, { status: 400 });
+      const today = new Date().toISOString().split("T")[0];
+      if (coupon.start_date && today < coupon.start_date) return Response.json({ error: "Cupom ainda não está disponível" }, { status: 400 });
+      if (coupon.end_date && today > coupon.end_date) return Response.json({ error: "Cupom expirado" }, { status: 400 });
+      if (coupon.max_uses > 0 && (coupon.used_count || 0) >= coupon.max_uses) return Response.json({ error: "Cupom esgotado" }, { status: 400 });
+      if (coupon.min_order_value > 0 && subtotal < coupon.min_order_value) return Response.json({ error: `Valor mínimo do pedido para este cupom: R$ ${coupon.min_order_value.toFixed(2)}` }, { status: 400 });
+      if (coupon.per_customer_limit > 0) {
+        const customerUses = (coupon.used_by || []).filter((id) => id === customer_id).length;
+        if (customerUses >= coupon.per_customer_limit) return Response.json({ error: "Você já usou este cupom" }, { status: 400 });
+      }
+      discount = Math.round(subtotal * coupon.discount_percent) / 100;
+      appliedCouponCode = coupon.code;
+      await base44.asServiceRole.entities.Coupon.update(coupon.id, {
+        used_count: (coupon.used_count || 0) + 1,
+        used_by: [...(coupon.used_by || []), customer_id],
+      });
+    }
+
+    const total = Math.round((subtotal - discount + freight) * 100) / 100;
 
     // 6. Gera número do pedido
     const existingOrders = await base44.asServiceRole.entities.Order.list("-order_number", 1);
@@ -164,7 +190,8 @@ export default async function (req) {
       distance_km: Math.round(distanceKm * 10) / 10,
       freight_per_km: freightPerKm,
       freight,
-      discount: 0,
+      coupon_code: appliedCouponCode,
+      discount,
       total,
       payment_method,
       change_for: change_for || null,
@@ -198,6 +225,8 @@ export default async function (req) {
       total,
       subtotal,
       freight,
+      discount,
+      coupon_code: appliedCouponCode,
       distance_km: orderData.distance_km,
     });
   } catch (error) {

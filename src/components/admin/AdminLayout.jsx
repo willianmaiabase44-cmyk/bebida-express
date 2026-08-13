@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { path: '/admin/suppliers', icon: Truck, label: 'Fornecedores' },
   { path: '/admin/stock', icon: ArrowLeftRight, label: 'Estoque' },
   { path: '/admin/promotions', icon: Tag, label: 'Promoções' },
+  { path: '/admin/coupons', icon: Tag, label: 'Cupons' },
   { path: '/admin/delivery-settings', icon: Settings, label: 'Config. de Entrega' },
   { path: '/admin/motoboys', icon: Bike, label: 'Motoboys' },
   { path: '/admin/deliveries', icon: MapPin, label: 'Entregas' },
