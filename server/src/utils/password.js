@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 // Hash de senha com bcrypt (futuro: substituirá PBKDF2 do Base44)
 export async function hashPassword(password) {
