@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
+import { LogIn, Mail, Lock, Loader2, FlaskConical } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 
@@ -30,6 +30,19 @@ export default function Login() {
 
   const handleGoogle = () => {
     base44.auth.loginWithProvider("google", "/admin");
+  };
+
+  const handleTestLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await base44.auth.loginViaEmailPassword("admin@smokebebidas.com.br", "Admin@123456");
+      window.location.href = "/admin";
+    } catch (err) {
+      setError(err.message || "Login de teste falhou");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -120,6 +133,25 @@ export default function Login() {
           )}
         </Button>
       </form>
+
+      <div className="relative mt-6 mb-2">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-3 text-muted-foreground">ou</span>
+        </div>
+      </div>
+
+      <Button
+        variant="secondary"
+        className="w-full h-12 font-medium mt-4"
+        onClick={handleTestLogin}
+        disabled={loading}
+      >
+        <FlaskConical className="w-4 h-4 mr-2" />
+        Entrar como teste
+      </Button>
     </AuthLayout>
   );
 }
