@@ -1,15 +1,21 @@
+// ============================================================
+// stock-movements.js — Rotas de movimentações de estoque
+// ============================================================
+// GET  /api/stock-movements      — admin (filtros: product_id, type, date_from, date_to)
+// GET  /api/stock-movements/:id  — admin
+// POST /api/stock-movements      — admin (transação atômica)
+// ============================================================
+
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import * as stockMovementController from '../controllers/stockMovementController.js';
 
 const router = Router();
 
-// GET /api/stock-movements — listar movimentações de estoque — PENDENTE
-router.get('/', notImplemented('Listar movimentações de estoque'));
-
-// GET /api/stock-movements/:id — buscar movimentação por ID — PENDENTE
-router.get('/:id', notImplemented('Buscar movimentação por ID'));
-
-// POST /api/stock-movements — registrar movimentação (entrada/saída) — PENDENTE
-router.post('/', notImplemented('Registrar movimentação de estoque'));
+router.get('/', authMiddleware, adminOnly, asyncHandler(stockMovementController.list));
+router.get('/:id', authMiddleware, adminOnly, asyncHandler(stockMovementController.getById));
+router.post('/', authMiddleware, adminOnly, asyncHandler(stockMovementController.create));
 
 export default router;

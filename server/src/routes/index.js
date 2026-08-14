@@ -15,6 +15,7 @@ import storeSettingsRouter from './store-settings.js';
 import suppliersRouter from './suppliers.js';
 import couponsRouter from './coupons.js';
 import freightRouter from './freight.js';
+import reportsRouter from './reports.js';
 import uploadRouter from './upload.js';
 
 const router = Router();
@@ -38,6 +39,7 @@ router.use('/store-settings', storeSettingsRouter);
 router.use('/suppliers', suppliersRouter);
 router.use('/coupons', couponsRouter);
 router.use('/freight', freightRouter);
+router.use('/reports', reportsRouter);
 
 // Upload (implementado — Multer)
 router.use('/upload', uploadRouter);

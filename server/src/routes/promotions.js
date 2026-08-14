@@ -1,21 +1,29 @@
+// ============================================================
+// promotions.js — Rotas de promoções
+// ============================================================
+// GET    /api/promotions       — público (ativas e vigentes)
+//                                admin com ?all=true (todas)
+// GET    /api/promotions/:id   — público
+// POST   /api/promotions       — admin
+// PUT    /api/promotions/:id   — admin
+// DELETE /api/promotions/:id   — admin
+// ============================================================
+
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware, optionalAuth } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import * as promotionController from '../controllers/promotionController.js';
 
 const router = Router();
 
-// GET /api/promotions — listar promoções — PENDENTE
-router.get('/', notImplemented('Listar promoções'));
+// Público: optionalAuth permite admin ver todas com ?all=true
+router.get('/', optionalAuth, asyncHandler(promotionController.list));
+router.get('/:id', optionalAuth, asyncHandler(promotionController.getById));
 
-// GET /api/promotions/:id — buscar promoção por ID — PENDENTE
-router.get('/:id', notImplemented('Buscar promoção por ID'));
-
-// POST /api/promotions — criar promoção (admin) — PENDENTE
-router.post('/', notImplemented('Criar promoção'));
-
-// PUT /api/promotions/:id — atualizar promoção (admin) — PENDENTE
-router.put('/:id', notImplemented('Atualizar promoção'));
-
-// DELETE /api/promotions/:id — excluir promoção (admin) — PENDENTE
-router.delete('/:id', notImplemented('Excluir promoção'));
+// Admin
+router.post('/', authMiddleware, adminOnly, asyncHandler(promotionController.create));
+router.put('/:id', authMiddleware, adminOnly, asyncHandler(promotionController.update));
+router.delete('/:id', authMiddleware, adminOnly, asyncHandler(promotionController.remove));
 
 export default router;

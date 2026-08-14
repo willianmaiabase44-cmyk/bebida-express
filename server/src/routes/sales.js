@@ -1,18 +1,23 @@
+// ============================================================
+// sales.js — Rotas de vendas PDV
+// ============================================================
+// GET    /api/sales          — admin
+// GET    /api/sales/:id      — admin
+// POST   /api/sales          — admin (transação atômica)
+// PATCH  /api/sales/:id/cancel — admin (transação atômica)
+// ============================================================
+
 import { Router } from 'express';
-import { notImplemented } from '../middleware/notImplemented.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import * as saleController from '../controllers/saleController.js';
 
 const router = Router();
 
-// GET /api/sales — listar vendas (PDV) — PENDENTE
-router.get('/', notImplemented('Listar vendas PDV'));
-
-// GET /api/sales/:id — buscar venda por ID — PENDENTE
-router.get('/:id', notImplemented('Buscar venda por ID'));
-
-// POST /api/sales — registrar venda no PDV — PENDENTE
-router.post('/', notImplemented('Registrar venda PDV'));
-
-// PATCH /api/sales/:id/cancel — cancelar venda — PENDENTE
-router.patch('/:id/cancel', notImplemented('Cancelar venda'));
+router.get('/', authMiddleware, adminOnly, asyncHandler(saleController.listSales));
+router.get('/:id', authMiddleware, adminOnly, asyncHandler(saleController.getSaleById));
+router.post('/', authMiddleware, adminOnly, asyncHandler(saleController.createSale));
+router.patch('/:id/cancel', authMiddleware, adminOnly, asyncHandler(saleController.cancelSale));
 
 export default router;

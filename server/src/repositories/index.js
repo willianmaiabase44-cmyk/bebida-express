@@ -17,3 +17,6 @@ export { orderRepository } from './orderRepository.js';
 export { stockMovementRepository } from './stockMovementRepository.js';
 export { deliveryRepository } from './deliveryRepository.js';
 export { deliveryReviewRepository } from './deliveryReviewRepository.js';
+export { saleRepository } from './saleRepository.js';
+export { supplierRepository } from './supplierRepository.js';
+export { promotionRepository } from './promotionRepository.js';

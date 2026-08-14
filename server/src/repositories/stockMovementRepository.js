@@ -28,7 +28,12 @@ export const stockMovementRepository = {
     return rows[0];
   },
 
-  async findAll({ productId, type, client = pool } = {}) {
+  async findById(id, client = pool) {
+    const { rows } = await client.query('SELECT * FROM stock_movements WHERE id = $1', [id]);
+    return rows[0] || null;
+  },
+
+  async findAll({ productId, type, dateFrom, dateTo, limit = 500, client = pool } = {}) {
     const conditions = [];
     const params = [];
     let idx = 1;
@@ -40,9 +45,18 @@ export const stockMovementRepository = {
       conditions.push(`type = $${idx++}`);
       params.push(type);
     }
+    if (dateFrom) {
+      conditions.push(`date >= $${idx++}`);
+      params.push(dateFrom);
+    }
+    if (dateTo) {
+      conditions.push(`date <= $${idx++}`);
+      params.push(dateTo);
+    }
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(limit);
     const { rows } = await client.query(
-      `SELECT * FROM stock_movements ${where} ORDER BY created_date DESC LIMIT 500`,
+      `SELECT * FROM stock_movements ${where} ORDER BY created_date DESC LIMIT $${idx++}`,
       params
     );
     return rows;
