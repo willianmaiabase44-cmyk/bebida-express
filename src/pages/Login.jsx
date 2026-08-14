@@ -32,17 +32,8 @@ export default function Login() {
     base44.auth.loginWithProvider("google", "/admin");
   };
 
-  const handleTestLogin = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      await base44.auth.loginViaEmailPassword("admin@smokebebidas.com.br", "Admin@123456");
-      window.location.href = "/admin";
-    } catch (err) {
-      setError(err.message || "Login de teste falhou");
-    } finally {
-      setLoading(false);
-    }
+  const handleTestLogin = () => {
+    window.location.href = "/admin";
   };
 
   return (
