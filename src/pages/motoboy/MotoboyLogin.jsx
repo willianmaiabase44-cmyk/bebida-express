@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Bike, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMotoboy } from '@/context/MotoboyContext';
+import { loginMotoboy } from '@/services/authService';
 
 export default function MotoboyLogin() {
   const navigate = useNavigate();
@@ -20,19 +21,14 @@ export default function MotoboyLogin() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await base44.functions.invoke('motoboyLogin', {
-        login: loginValue.trim().toLowerCase(),
-        password,
-      });
-      if (res.data?.error) {
-        toast.error(res.data.error);
-      } else if (res.data?.driver) {
-        login(res.data.driver);
-        toast.success('Bem-vindo, ' + res.data.driver.name + '!');
+      const data = await loginMotoboy(loginValue.trim().toLowerCase(), password);
+      if (data.motoboy) {
+        login(data);
+        toast.success('Bem-vindo, ' + data.motoboy.name + '!');
         navigate('/motoboy');
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Erro ao entrar');
+      toast.error(err.message || 'Erro ao entrar');
     } finally {
       setLoading(false);
     }

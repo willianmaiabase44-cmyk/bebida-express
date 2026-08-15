@@ -8,6 +8,7 @@ import { Smartphone, Loader2, User } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { useCustomer } from "@/context/CustomerContext";
 import { toast } from "sonner";
+import { loginCustomer } from "@/services/authService";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -41,19 +42,16 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("customerAuth", { phone: cleanPhone });
-      const data = res.data;
-      if (data.error) {
-        setError(data.error);
-      } else if (data.exists === false) {
+      const data = await loginCustomer(cleanPhone);
+      if (data.exists === false) {
         setStep("name");
       } else if (data.customer) {
-        login(data.customer);
+        login(data);
         toast.success(`Bem-vindo, ${data.customer.name}!`);
         navigate("/");
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Erro ao verificar celular");
+      setError(err.message || "Erro ao verificar celular");
     } finally {
       setLoading(false);
     }
@@ -69,20 +67,14 @@ export default function Register() {
     setLoading(true);
     try {
       const cleanPhone = phone.replace(/\D/g, "");
-      const res = await base44.functions.invoke("customerAuth", {
-        phone: cleanPhone,
-        name: name.trim(),
-      });
-      const data = res.data;
-      if (data.error) {
-        setError(data.error);
-      } else if (data.customer) {
-        login(data.customer);
+      const data = await loginCustomer(cleanPhone, name.trim());
+      if (data.customer) {
+        login(data);
         toast.success("Bem-vindo à Smoke Bebidas!");
         navigate("/");
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Erro ao cadastrar");
+      setError(err.message || "Erro ao cadastrar");
     } finally {
       setLoading(false);
     }

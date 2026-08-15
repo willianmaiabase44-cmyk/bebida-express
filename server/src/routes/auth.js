@@ -18,7 +18,8 @@ const router = Router();
 router.post('/admin/login', asyncHandler(authController.loginAdmin));
 router.post('/customer', asyncHandler(authController.loginCustomer));
 router.post('/motoboy', asyncHandler(authController.loginMotoboy));
+router.post('/refresh', asyncHandler(authController.refresh));
 router.get('/me', authMiddleware, asyncHandler(authController.getMe));
-router.post('/logout', asyncHandler(authController.logout));
+router.post('/logout', authMiddleware, asyncHandler(authController.logout));
 
 export default router;

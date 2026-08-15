@@ -21,8 +21,14 @@ export const CustomerProvider = ({ children }) => {
   }, []);
 
   const login = (customerData) => {
-    setCustomer(customerData);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(customerData));
+    const data = {
+      ...customerData,
+      type: 'customer',
+      access_token: customerData.access_token || customerData.token,
+      refresh_token: customerData.refresh_token,
+    };
+    setCustomer(data);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
   const logout = () => {

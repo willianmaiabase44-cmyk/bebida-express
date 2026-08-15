@@ -25,8 +25,36 @@ import { userRepository } from '../repositories/userRepository.js';
 import { customerRepository } from '../repositories/customerRepository.js';
 import { customerAddressRepository } from '../repositories/customerAddressRepository.js';
 import { deliveryDriverRepository } from '../repositories/deliveryDriverRepository.js';
+import { refreshTokenRepository } from '../repositories/refreshTokenRepository.js';
 import { verifyPassword } from '../utils/password.js';
-import { signToken } from '../utils/jwt.js';
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
+import { config } from '../config/index.js';
+
+// Calcula a data de expiração do refresh token
+function refreshExpiryDate() {
+  const expiresStr = config.jwt.refreshExpiresIn;
+  const ms = parseDurationToMs(expiresStr);
+  return new Date(Date.now() + ms);
+}
+
+function parseDurationToMs(str) {
+  const match = /^(\d+)([smhdwy])$/.exec(str || '7d');
+  if (!match) return 7 * 24 * 60 * 60 * 1000;
+  const num = parseInt(match[1], 10);
+  const unit = match[2];
+  const units = { s: 1000, m: 60000, h: 3600000, d: 86400000, w: 604800000, y: 31536000000 };
+  return num * units[unit];
+}
+
+// Emite par access + refresh e persiste o refresh token
+async function issueTokens(payload, userType, client = undefined) {
+  const access_token = signAccessToken(payload);
+  const refresh = await refreshTokenRepository.create(
+    { user_id: payload.id, user_type: userType, expires_at: refreshExpiryDate() },
+    client
+  );
+  return { access_token, refresh_token: refresh.token };
+}
 
 // Normalização de telefone (igual ao customerAuth do Base44)
 function normalizePhone(phone) {
@@ -73,14 +101,15 @@ export async function loginAdmin(email, password) {
     throw httpError('Acesso restrito a administradores', 403);
   }
 
-  const token = signToken({
+  const payload = {
     id: user.id,
     role: user.role,
     type: 'admin',
     email: user.email,
-  });
+  };
+  const tokens = await issueTokens(payload, 'admin');
 
-  return { token, user: sanitize(user) };
+  return { ...tokens, user: sanitize(user) };
 }
 
 // ============================================================
@@ -96,13 +125,14 @@ export async function loginCustomer(phone, name, address) {
 
   if (existing) {
     const addresses = await customerAddressRepository.findByCustomerId(existing.id);
-    const token = signToken({
+    const payload = {
       id: existing.id,
       type: 'customer',
       name: existing.name,
       phone: existing.phone,
-    });
-    return { token, customer: existing, addresses, is_new: false };
+    };
+    const tokens = await issueTokens(payload, 'customer');
+    return { ...tokens, customer: existing, addresses, is_new: false };
   }
 
   // Cliente novo — precisa de nome
@@ -132,14 +162,15 @@ export async function loginCustomer(phone, name, address) {
     addresses = [addr];
   }
 
-  const token = signToken({
+  const payload = {
     id: customer.id,
     type: 'customer',
     name: customer.name,
     phone: customer.phone,
-  });
+  };
+  const tokens = await issueTokens(payload, 'customer');
 
-  return { token, customer, addresses, is_new: true };
+  return { ...tokens, customer, addresses, is_new: true };
 }
 
 // ============================================================
@@ -164,14 +195,68 @@ export async function loginMotoboy(login, password) {
     throw httpError('Motoboy inativo. Contate o administrador.', 403);
   }
 
-  const token = signToken({
+  const payload = {
     id: driver.id,
     type: 'motoboy',
     name: driver.name,
     login: driver.login,
-  });
+  };
+  const tokens = await issueTokens(payload, 'motoboy');
 
-  return { token, motoboy: sanitize(driver) };
+  return { ...tokens, motoboy: sanitize(driver) };
+}
+
+// ============================================================
+// POST /api/auth/refresh — renova access token via refresh token
+// ============================================================
+export async function refreshAccessToken(refreshTokenValue) {
+  if (!refreshTokenValue) {
+    throw httpError('Refresh token não fornecido', 400);
+  }
+
+  // Verifica assinatura do JWT
+  let payload;
+  try {
+    payload = verifyRefreshToken(refreshTokenValue);
+  } catch {
+    throw httpError('Refresh token inválido', 401);
+  }
+
+  // Verifica se existe no banco e não foi revogado
+  const stored = await refreshTokenRepository.findValid(refreshTokenValue);
+  if (!stored) {
+    throw httpError('Refresh token expirado ou revogado', 401);
+  }
+
+  // Revoga o refresh token usado (rotação)
+  await refreshTokenRepository.revoke(refreshTokenValue);
+
+  // Emite novos tokens
+  const newPayload = {
+    id: payload.id,
+    type: payload.type,
+    ...(payload.role ? { role: payload.role } : {}),
+    ...(payload.email ? { email: payload.email } : {}),
+    ...(payload.name ? { name: payload.name } : {}),
+    ...(payload.phone ? { phone: payload.phone } : {}),
+    ...(payload.login ? { login: payload.login } : {}),
+  };
+  const tokens = await issueTokens(newPayload, payload.type);
+
+  return tokens;
+}
+
+// ============================================================
+// POST /api/auth/logout — revoga refresh tokens do usuário
+// ============================================================
+export async function logoutUser(payload, refreshTokenValue) {
+  if (refreshTokenValue) {
+    await refreshTokenRepository.revoke(refreshTokenValue).catch(() => {});
+  }
+  if (payload?.id && payload?.type) {
+    await refreshTokenRepository.revokeByUserId(payload.id, payload.type).catch(() => {});
+  }
+  return { success: true };
 }
 
 // ============================================================

@@ -19,8 +19,14 @@ export const MotoboyProvider = ({ children }) => {
   }, []);
 
   const login = (motoboyData) => {
-    setMotoboy(motoboyData);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(motoboyData));
+    const data = {
+      ...motoboyData,
+      type: 'motoboy',
+      access_token: motoboyData.access_token || motoboyData.token,
+      refresh_token: motoboyData.refresh_token,
+    };
+    setMotoboy(data);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
   const logout = () => {

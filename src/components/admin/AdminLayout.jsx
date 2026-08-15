@@ -51,7 +51,12 @@ export default function AdminLayout() {
   }, []);
 
   const handleLogout = () => {
-    base44.auth.logout('/');
+    // Logout via /server (authService) — não usa base44.auth
+    import('@/services/authService').then(({ logout }) => {
+      logout().then(() => {
+        window.location.href = '/login';
+      });
+    });
   };
 
   return (

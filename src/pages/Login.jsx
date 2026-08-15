@@ -4,11 +4,14 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2, FlaskConical } from "lucide-react";
+import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import { loginAdmin } from "@/services/authService";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Login() {
+  const { checkUserAuth } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,7 +22,8 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
+      await loginAdmin(email, password);
+      await checkUserAuth();
       window.location.href = "/admin";
     } catch (err) {
       setError(err.message || "E-mail ou senha inválidos");
@@ -30,10 +34,6 @@ export default function Login() {
 
   const handleGoogle = () => {
     base44.auth.loginWithProvider("google", "/admin");
-  };
-
-  const handleTestLogin = () => {
-    window.location.href = "/admin";
   };
 
   return (
@@ -125,24 +125,6 @@ export default function Login() {
         </Button>
       </form>
 
-      <div className="relative mt-6 mb-2">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">ou</span>
-        </div>
-      </div>
-
-      <Button
-        variant="secondary"
-        className="w-full h-12 font-medium mt-4"
-        onClick={handleTestLogin}
-        disabled={loading}
-      >
-        <FlaskConical className="w-4 h-4 mr-2" />
-        Entrar como teste
-      </Button>
     </AuthLayout>
   );
 }

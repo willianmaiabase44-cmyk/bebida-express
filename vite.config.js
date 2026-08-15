@@ -7,6 +7,13 @@ export default defineConfig({
   logLevel: 'error', // Suppress warnings, only show errors
   // Ignora a pasta /server (backend próprio — não faz parte do bundle do frontend)
   server: {
+    proxy: {
+      '/server-api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/server-api/, '/api'),
+      },
+    },
     watch: {
       ignored: ['**/server/**'],
     },

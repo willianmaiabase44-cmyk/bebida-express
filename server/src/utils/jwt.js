@@ -1,13 +1,26 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config/index.js';
 
-// Gera token JWT
-// payload pode conter: { id, role, type: 'admin'|'customer'|'motoboy', name, ... }
-export function signToken(payload) {
+// Access Token — curta duração
+export function signAccessToken(payload) {
   return jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
 }
 
-// Verifica token JWT
-export function verifyToken(token) {
+// Refresh Token — longa duração
+export function signRefreshToken(payload) {
+  return jwt.sign(payload, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn });
+}
+
+// Verifica Access Token
+export function verifyAccessToken(token) {
   return jwt.verify(token, config.jwt.secret);
 }
+
+// Verifica Refresh Token
+export function verifyRefreshToken(token) {
+  return jwt.verify(token, config.jwt.refreshSecret);
+}
+
+// Compatibilidade com código existente
+export const signToken = signAccessToken;
+export const verifyToken = verifyAccessToken;

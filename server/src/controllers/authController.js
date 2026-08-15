@@ -39,7 +39,19 @@ export function getMe(req, res, next) {
     .catch(next);
 }
 
-// POST /api/auth/logout — JWT stateless; cliente descarta o token
-export function logout(req, res) {
-  res.json({ success: true, message: 'Logout realizado' });
+// POST /api/auth/refresh — renova access token
+export function refresh(req, res, next) {
+  authService
+    .refreshAccessToken(req.body.refresh_token)
+    .then((result) => res.json(result))
+    .catch(next);
+}
+
+// POST /api/auth/logout — revoga refresh tokens (req.user do authMiddleware)
+export function logout(req, res, next) {
+  const refreshToken = req.body?.refresh_token;
+  authService
+    .logoutUser(req.user, refreshToken)
+    .then((result) => res.json(result))
+    .catch(next);
 }
