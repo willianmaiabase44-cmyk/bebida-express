@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { ArrowDownCircle, ArrowUpCircle, Search, Loader2, Plus, FileText } from 'lucide-react';
 import StockEntryByNote from '@/components/admin/StockEntryByNote';
+import StockExportImport from '@/components/admin/StockExportImport';
 import { formatPrice } from '@/lib/constants';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -71,7 +72,8 @@ export default function StockManagement() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-heading font-bold text-2xl">Controle de Estoque</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <StockExportImport products={products} />
           <Button onClick={() => setNoteDialogOpen(true)} variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10">
             <FileText className="w-4 h-4" /> Entrada por Nota
           </Button>
