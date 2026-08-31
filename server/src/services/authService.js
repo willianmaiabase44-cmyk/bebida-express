@@ -26,7 +26,7 @@ import { customerRepository } from '../repositories/customerRepository.js';
 import { customerAddressRepository } from '../repositories/customerAddressRepository.js';
 import { deliveryDriverRepository } from '../repositories/deliveryDriverRepository.js';
 import { refreshTokenRepository } from '../repositories/refreshTokenRepository.js';
-import { verifyPassword } from '../utils/password.js';
+import { verifyPassword, hashPassword } from '../utils/password.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 import { config } from '../config/index.js';
 
@@ -244,6 +244,63 @@ export async function refreshAccessToken(refreshTokenValue) {
   const tokens = await issueTokens(newPayload, payload.type);
 
   return tokens;
+}
+
+// ============================================================
+// POST /api/auth/password-reset/request — solicita reset de senha
+// ============================================================
+// Gera um token de reset, armazena hasheado no banco.
+// O envio por email fica a cargo de uma camada de notificação
+// (ainda não implementada no /server — sem dependência do Base44).
+// ============================================================
+export async function requestPasswordReset(email) {
+  if (!email) {
+    throw httpError('Email é obrigatório', 400);
+  }
+
+  const user = await userRepository.findByEmail(email);
+  // Sempre retorna sucesso — não revela se o email existe
+  if (!user) {
+    return { success: true };
+  }
+
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+  const token = await userRepository.createPasswordResetToken(user.id, expiresAt);
+
+  // TODO: enviar email com o link /reset-password?token=<token>
+  // Por enquanto o token é gerado mas não enviado (sem infra de email no /server).
+  // Em desenvolvimento, pode ser obtido via log ou resposta de teste.
+  if (config.nodeEnv === 'development') {
+    console.log('[password-reset] token for', email, ':', token);
+  }
+
+  return { success: true };
+}
+
+// ============================================================
+// POST /api/auth/password-reset/confirm — redefine a senha
+// ============================================================
+export async function resetPassword(token, newPassword) {
+  if (!token || !newPassword) {
+    throw httpError('Token e nova senha são obrigatórios', 400);
+  }
+  if (newPassword.length < 6) {
+    throw httpError('A senha deve ter no mínimo 6 caracteres', 400);
+  }
+
+  const resetRecord = await userRepository.findValidPasswordResetToken(token);
+  if (!resetRecord) {
+    throw httpError('Token inválido ou expirado', 401);
+  }
+
+  const password_hash = await hashPassword(newPassword);
+  await userRepository.updatePassword(resetRecord.user_id, password_hash);
+  await userRepository.markPasswordResetTokenUsed(token);
+
+  // Revoga todos os refresh tokens do usuário (força novo login)
+  await refreshTokenRepository.revokeByUserId(resetRecord.user_id, 'admin').catch(() => {});
+
+  return { success: true };
 }
 
 // ============================================================

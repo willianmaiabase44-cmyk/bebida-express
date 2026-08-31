@@ -55,3 +55,19 @@ export function logout(req, res, next) {
     .then((result) => res.json(result))
     .catch(next);
 }
+
+// POST /api/auth/password-reset/request
+export function requestPasswordReset(req, res, next) {
+  authService
+    .requestPasswordReset(req.body.email)
+    .then((result) => res.json(result))
+    .catch(next);
+}
+
+// POST /api/auth/password-reset/confirm
+export function resetPassword(req, res, next) {
+  authService
+    .resetPassword(req.body.token, req.body.newPassword)
+    .then((result) => res.json(result))
+    .catch(next);
+}

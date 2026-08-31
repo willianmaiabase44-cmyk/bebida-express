@@ -6,9 +6,14 @@
 // ============================================================
 
 import { pool } from '../db/index.js';
+import crypto from 'crypto';
 
 // Colunas públicas (sem password_hash)
 const SAFE_COLS = 'id, email, full_name, phone, role, created_date, updated_date';
+
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 export const userRepository = {
   async findByEmail(email, client = pool) {
@@ -34,5 +39,38 @@ export const userRepository = {
       [email, full_name || null, password_hash, role]
     );
     return rows[0];
+  },
+
+  // --- Password reset ---
+
+  async updatePassword(id, password_hash, client = pool) {
+    await client.query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, id]);
+    return true;
+  },
+
+  async createPasswordResetToken(user_id, expires_at, client = pool) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashToken(token);
+    await client.query(
+      `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [user_id, tokenHash, expires_at]
+    );
+    return token;
+  },
+
+  async findValidPasswordResetToken(token, client = pool) {
+    const tokenHash = hashToken(token);
+    const { rows } = await client.query(
+      `SELECT * FROM password_reset_tokens
+       WHERE token_hash = $1 AND used = false AND expires_at > NOW()`,
+      [tokenHash]
+    );
+    return rows[0] || null;
+  },
+
+  async markPasswordResetTokenUsed(token, client = pool) {
+    const tokenHash = hashToken(token);
+    await client.query('UPDATE password_reset_tokens SET used = true WHERE token_hash = $1', [tokenHash]);
   },
 };

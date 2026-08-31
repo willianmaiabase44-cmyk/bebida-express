@@ -19,7 +19,10 @@ export const AuthProvider = ({ children }) => {
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
 
   useEffect(() => {
-    checkAppState();
+    // Auth admin é verificada INDEPENDENTEMENTE do Base44.
+    // Public settings (não-auth) carregam em paralelo e podem falhar sem afetar auth.
+    checkUserAuth();
+    loadPublicSettings();
     setAuthRedirectHandler(() => {
       setUser(null);
       setIsAuthenticated(false);
@@ -29,68 +32,25 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  const checkAppState = async () => {
+  const loadPublicSettings = async () => {
     try {
       setIsLoadingPublicSettings(true);
-      setAuthError(null);
-      
-      // First, check app public settings (with token if available)
-      // This will tell us if auth is required, user not registered, etc.
       const appClient = createAxiosClient({
         baseURL: `/api/apps/public`,
         headers: {
           'X-App-Id': appParams.appId
         },
-        token: appParams.token, // Include token if available
+        token: appParams.token,
         interceptResponses: true
       });
-      
-      try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
-        setAppPublicSettings(publicSettings);
 
-        // Verifica auth admin via /server (independente do Base44)
-        await checkUserAuth();
-        setIsLoadingPublicSettings(false);
-      } catch (appError) {
-        console.error('App state check failed:', appError);
-        
-        // Handle app-level errors
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
-          const reason = appError.data.extra_data.reason;
-          if (reason === 'auth_required') {
-            setAuthError({
-              type: 'auth_required',
-              message: 'Authentication required'
-            });
-          } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
-          } else {
-            setAuthError({
-              type: reason,
-              message: appError.message
-            });
-          }
-        } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
-        }
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
-      }
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      setAuthError({
-        type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
-      });
+      const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
+      setAppPublicSettings(publicSettings);
       setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
+    } catch (appError) {
+      // Public settings não são auth — falha silenciosa, não bloqueia o app
+      console.error('Public settings load failed (non-auth):', appError);
+      setIsLoadingPublicSettings(false);
     }
   };
 
@@ -111,6 +71,8 @@ export const AuthProvider = ({ children }) => {
           setUser({ ...me.user, type: 'admin' });
           setIsAuthenticated(true);
         } else {
+          // Token existe mas não é admin — limpa
+          localStorage.removeItem(ADMIN_KEY);
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -154,7 +116,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       navigateToLogin,
       checkUserAuth,
-      checkAppState
+      loadPublicSettings
     }}>
       {children}
     </AuthContext.Provider>

@@ -27,6 +27,7 @@ import ResetPassword from '@/pages/ResetPassword';
 
 // Admin pages
 import AdminLayout from '@/components/admin/AdminLayout';
+import AdminProtectedRoute from '@/components/AdminProtectedRoute';
 import Dashboard from '@/pages/admin/Dashboard';
 import Products from '@/pages/admin/Products';
 import Suppliers from '@/pages/admin/Suppliers';
@@ -93,24 +94,26 @@ const AuthenticatedApp = () => {
         <Route path="/pedido/:id" element={<OrderConfirmation />} />
       </Route>
 
-      {/* Admin routes - acesso livre (autenticação removida temporariamente) */}
-      <Route element={<AdminLayout />}>
-        <Route path="/admin" element={<Dashboard />} />
-        <Route path="/admin/orders" element={<Orders />} />
-        <Route path="/admin/products" element={<Products />} />
-        <Route path="/admin/suppliers" element={<Suppliers />} />
-        <Route path="/admin/stock" element={<StockManagement />} />
-        <Route path="/admin/promotions" element={<Promotions />} />
-        <Route path="/admin/pos" element={<POS />} />
-        <Route path="/admin/delivery-settings" element={<DeliverySettings />} />
-        <Route path="/admin/motoboys" element={<Motoboys />} />
-        <Route path="/admin/deliveries" element={<Deliveries />} />
-        <Route path="/admin/reviews" element={<DeliveryReviews />} />
-        <Route path="/admin/coupons" element={<Coupons />} />
-        <Route path="/admin/quick-update" element={<QuickUpdate />} />
-        <Route path="/admin/reports" element={<Reports />} />
-        <Route path="/admin/reports/:type" element={<ReportView />} />
-        <Route path="/admin/access-links" element={<AccessLinks />} />
+      {/* Admin routes - protegidas por AdminProtectedRoute (auth via /server) */}
+      <Route element={<AdminProtectedRoute />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<Dashboard />} />
+          <Route path="/admin/orders" element={<Orders />} />
+          <Route path="/admin/products" element={<Products />} />
+          <Route path="/admin/suppliers" element={<Suppliers />} />
+          <Route path="/admin/stock" element={<StockManagement />} />
+          <Route path="/admin/promotions" element={<Promotions />} />
+          <Route path="/admin/pos" element={<POS />} />
+          <Route path="/admin/delivery-settings" element={<DeliverySettings />} />
+          <Route path="/admin/motoboys" element={<Motoboys />} />
+          <Route path="/admin/deliveries" element={<Deliveries />} />
+          <Route path="/admin/reviews" element={<DeliveryReviews />} />
+          <Route path="/admin/coupons" element={<Coupons />} />
+          <Route path="/admin/quick-update" element={<QuickUpdate />} />
+          <Route path="/admin/reports" element={<Reports />} />
+          <Route path="/admin/reports/:type" element={<ReportView />} />
+          <Route path="/admin/access-links" element={<AccessLinks />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

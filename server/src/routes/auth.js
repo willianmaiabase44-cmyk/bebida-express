@@ -21,5 +21,7 @@ router.post('/motoboy', asyncHandler(authController.loginMotoboy));
 router.post('/refresh', asyncHandler(authController.refresh));
 router.get('/me', authMiddleware, asyncHandler(authController.getMe));
 router.post('/logout', authMiddleware, asyncHandler(authController.logout));
+router.post('/password-reset/request', asyncHandler(authController.requestPasswordReset));
+router.post('/password-reset/confirm', asyncHandler(authController.resetPassword));
 
 export default router;

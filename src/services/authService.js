@@ -78,6 +78,26 @@ export async function logout() {
   localStorage.removeItem(ADMIN_KEY);
 }
 
+// --- Recuperação de senha ------------------------------------------
+
+export async function requestPasswordReset(email) {
+  const res = await api.post('/auth/password-reset/request', { email });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Erro ao solicitar recuperação');
+  }
+  return res.json();
+}
+
+export async function resetPassword(token, newPassword) {
+  const res = await api.post('/auth/password-reset/confirm', { token, newPassword });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Erro ao redefinir senha');
+  }
+  return res.json();
+}
+
 // --- Estado local --------------------------------------------------
 
 export function getStoredAdmin() {
