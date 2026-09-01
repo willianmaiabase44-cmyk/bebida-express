@@ -8,9 +8,11 @@
 import { orderService } from '../services/orderService.js';
 
 // POST /api/orders — criar pedido (transação atômica)
+// Header opcional: Idempotency-Key — evita pedidos duplicados
 export function createOrder(req, res, next) {
+  const idempotencyKey = req.headers['idempotency-key'] || null;
   orderService
-    .createOrder(req.body, req.user)
+    .createOrder(req.body, req.user, idempotencyKey)
     .then((result) => res.status(201).json(result))
     .catch(next);
 }

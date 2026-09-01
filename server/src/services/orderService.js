@@ -35,8 +35,30 @@ export const orderService = {
   // ============================================================
   // POST /api/orders — CRIAR PEDIDO (transação atômica)
   // ============================================================
-  async createOrder(data, currentUser) {
+  // idempotencyKey (opcional): se fornecido e já existir um pedido
+  // com a mesma chave, retorna o pedido existente em vez de duplicar.
+  // ============================================================
+  async createOrder(data, currentUser, idempotencyKey) {
     const { items, address_id, customer_id, payment_method, change_for, notes, coupon_code } = data;
+
+    // 0. Idempotência — se já existe pedido com esta chave, retorna ele
+    if (idempotencyKey) {
+      const existing = await orderRepository.findByIdempotencyKey(idempotencyKey);
+      if (existing) {
+        return {
+          success: true,
+          order_id: existing.id,
+          order_number: existing.order_number,
+          total: Number(existing.total),
+          subtotal: Number(existing.subtotal),
+          freight: Number(existing.freight),
+          discount: Number(existing.discount),
+          coupon_code: existing.coupon_code,
+          distance_km: Number(existing.distance_km),
+          idempotent_replay: true,
+        };
+      }
+    }
 
     // 1. Validar campos obrigatórios
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -237,6 +259,7 @@ export const orderService = {
           notes: notes || '',
           status_history: statusHistory,
           date: today,
+          idempotency_key: idempotencyKey || null,
         },
         client
       );

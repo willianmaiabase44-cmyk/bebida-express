@@ -38,13 +38,13 @@ export const orderRepository = {
          address_district, address_city, address_state, address_reference, address_full,
          address_lat, address_lng, items, subtotal, distance_km, freight_per_km, freight,
          coupon_code, discount, total, payment_method, change_for, status, channel,
-         notes, status_history, date
+         notes, status_history, date, idempotency_key
        ) VALUES (
          $1, nextval('order_number_seq'), $2, $3, $4,
          $5, $6, $7, $8, $9, $10, $11, $12, $13,
          $14, $15, $16::jsonb, $17, $18, $19, $20,
          $21, $22, $23, $24, $25, $26, $27, $28,
-         $29::jsonb, $30
+         $29::jsonb, $30, $31
        ) RETURNING *`,
       [
         data.customer_id,
@@ -77,9 +77,20 @@ export const orderRepository = {
         data.notes || '',
         JSON.stringify(data.status_history || []),
         data.date,
+        data.idempotency_key || null,
       ]
     );
     return formatOrder(rows[0]);
+  },
+
+  // Busca pedido por chave de idempotência (para evitar duplicação)
+  async findByIdempotencyKey(key, client = pool) {
+    if (!key) return null;
+    const { rows } = await client.query(
+      'SELECT * FROM orders WHERE idempotency_key = $1',
+      [key]
+    );
+    return formatOrder(rows[0]) || null;
   },
 
   async findById(id, client = pool) {

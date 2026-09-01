@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +13,10 @@ import { toast } from "sonner";
 import { Loader2, MapPin, Plus, Truck, ShoppingBag, CheckCircle2, ArrowLeft, Trash2, Tag } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AddressForm from "@/components/checkout/AddressForm";
+import { listAddresses, createAddress, deleteAddress } from "@/services/addressService";
+import { calculateFreight } from "@/services/freightService";
+import { validateCoupon } from "@/services/couponService";
+import { createOrder, generateIdempotencyKey } from "@/services/orderService";
 
 const PAYMENT_OPTIONS = [
   { value: "pix", label: "PIX", desc: "Pagamento via PIX" },
@@ -40,19 +43,16 @@ export default function Checkout() {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const idempotencyRef = useRef(null);
 
   const loadAddresses = async () => {
     if (!customer) return;
     try {
-      const res = await base44.functions.invoke("manageCustomerAddress", {
-        action: "list",
-        customer_id: customer.id,
-      });
-      const list = res.data?.addresses || [];
+      const list = await listAddresses(customer.id);
       setAddresses(list);
       if (list.length > 0 && !selectedAddressId) setSelectedAddressId(list[0].id);
     } catch (e) {
-      toast.error("Erro ao carregar endereços");
+      toast.error(e.message || "Erro ao carregar endereços");
     } finally {
       setLoading(false);
     }
@@ -66,10 +66,10 @@ export default function Checkout() {
       return;
     }
     setCalculatingFreight(true);
-    base44.functions.invoke("calculateFreight", { address_id: selectedAddressId })
-      .then(res => setFreightData(res.data))
+    calculateFreight(selectedAddressId)
+      .then(data => setFreightData(data))
       .catch(e => {
-        toast.error(e.response?.data?.error || "Erro ao calcular frete");
+        toast.error(e.message || "Erro ao calcular frete");
         setFreightData(null);
       })
       .finally(() => setCalculatingFreight(false));
@@ -77,16 +77,12 @@ export default function Checkout() {
 
   const handleAddAddress = async (formData) => {
     try {
-      await base44.functions.invoke("manageCustomerAddress", {
-        action: "create",
-        customer_id: customer.id,
-        address: formData,
-      });
+      await createAddress(customer.id, formData);
       toast.success("Endereço adicionado!");
       setAddDialogOpen(false);
       loadAddresses();
     } catch (e) {
-      toast.error("Erro ao salvar endereço");
+      toast.error(e.message || "Erro ao salvar endereço");
     }
   };
 
@@ -94,17 +90,13 @@ export default function Checkout() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await base44.functions.invoke("manageCustomerAddress", {
-        action: "delete",
-        customer_id: customer.id,
-        address_id: deleteTarget.id,
-      });
+      await deleteAddress(deleteTarget.id);
       toast.success("Endereço removido");
       if (selectedAddressId === deleteTarget.id) setSelectedAddressId(null);
       setDeleteTarget(null);
       loadAddresses();
     } catch (e) {
-      toast.error("Erro ao remover endereço");
+      toast.error(e.message || "Erro ao remover endereço");
     } finally {
       setDeleting(false);
     }
@@ -114,20 +106,16 @@ export default function Checkout() {
     if (!couponCode.trim()) { toast.error("Digite um cupom"); return; }
     setValidatingCoupon(true);
     try {
-      const res = await base44.functions.invoke("validateCoupon", {
-        coupon_code: couponCode.toUpperCase().trim(),
-        customer_id: customer.id,
-        subtotal: total,
-      });
-      if (res.data?.valid) {
-        setAppliedCoupon(res.data);
-        toast.success(res.data.message);
+      const data = await validateCoupon(couponCode.toUpperCase().trim(), customer.id, total);
+      if (data?.valid) {
+        setAppliedCoupon(data);
+        toast.success(data.message);
       } else {
-        toast.error(res.data?.message || "Cupom inválido");
+        toast.error(data?.message || "Cupom inválido");
         setAppliedCoupon(null);
       }
     } catch (e) {
-      toast.error(e.response?.data?.message || "Cupom inválido");
+      toast.error(e.message || "Cupom inválido");
       setAppliedCoupon(null);
     } finally {
       setValidatingCoupon(false);
@@ -143,6 +131,12 @@ export default function Checkout() {
     if (!selectedAddressId) { toast.error("Selecione um endereço de entrega"); return; }
     if (!freightData) { toast.error("Aguarde o cálculo do frete"); return; }
     setPlacing(true);
+    // Gera chave de idempotência uma vez por tentativa de finalização.
+    // Protege contra duplo-clique e retry de rede: o backend retorna o
+    // pedido existente se a mesma chave for enviada novamente.
+    if (!idempotencyRef.current) {
+      idempotencyRef.current = generateIdempotencyKey();
+    }
     try {
       const payload = {
         items: items.map(i => ({
@@ -160,17 +154,22 @@ export default function Checkout() {
         notes,
         coupon_code: appliedCoupon?.coupon_code || "",
       };
-      const res = await base44.functions.invoke("placeOrder", payload);
-      if (res.data?.success) {
+      const data = await createOrder(payload, idempotencyRef.current);
+      if (data?.success) {
         clearCart();
-        navigate(`/pedido/${res.data.order_id}`, { state: { order: res.data } });
+        navigate(`/pedido/${data.order_id}`, { state: { order: data } });
       } else {
-        toast.error(res.data?.error || "Erro ao finalizar pedido");
+        toast.error(data?.error || "Erro ao finalizar pedido");
       }
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao finalizar pedido");
+      toast.error(e.message || "Erro ao finalizar pedido");
     } finally {
       setPlacing(false);
+      // Limpa a chave para uma nova tentativa só se o pedido NÃO foi criado.
+      // Se foi criado com sucesso, o navigate já trocou de página.
+      if (!window.location.pathname.startsWith("/pedido")) {
+        idempotencyRef.current = null;
+      }
     }
   };
 
