@@ -20,6 +20,10 @@ export function errorHandler(err, req, res, next) {
 
   console.error('Erro não tratado:', err);
   const status = err.status || 500;
+  // Erros 5xx: não expõe detalhes internos ao cliente
+  if (status >= 500) {
+    return res.status(status).json({ error: 'Erro interno do servidor' });
+  }
   res.status(status).json({
     error: err.message || 'Erro interno do servidor',
   });

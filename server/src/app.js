@@ -10,9 +10,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
-// CORS
+// CORS — origin obrigatória (sem fallback curinga)
+const corsOrigin = process.env.FRONTEND_URL;
+if (!corsOrigin) {
+  console.warn('[CORS] FRONTEND_URL não definida — CORS bloqueará requisições cross-origin.');
+}
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: corsOrigin ? corsOrigin.split(',').map((o) => o.trim()) : false,
   credentials: true,
 }));
 

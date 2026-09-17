@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link as LinkIcon, Copy, ExternalLink, Bike, ShoppingCart, Check } from "lucide-react";
+import { Link as LinkIcon, Copy, ExternalLink, ShoppingCart, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -16,15 +16,6 @@ export default function AccessLinks() {
       description: "Link público onde os clientes entram para fazer pedidos.",
       url: `${origin}/`,
       openLabel: "Abrir Site",
-      accent: "text-primary",
-    },
-    {
-      id: "motoboy",
-      icon: Bike,
-      title: "Área do Motoboy",
-      description: "Link onde os motoboys fazem login para acessar suas entregas.",
-      url: `${origin}/motoboy`,
-      openLabel: "Abrir Área do Motoboy",
       accent: "text-primary",
     },
   ];

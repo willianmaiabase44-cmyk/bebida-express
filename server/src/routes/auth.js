@@ -11,17 +11,18 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { loginLimiter, passwordResetLimiter } from '../middleware/rateLimit.js';
 import * as authController from '../controllers/authController.js';
 
 const router = Router();
 
-router.post('/admin/login', asyncHandler(authController.loginAdmin));
+router.post('/admin/login', loginLimiter, asyncHandler(authController.loginAdmin));
 router.post('/customer', asyncHandler(authController.loginCustomer));
-router.post('/motoboy', asyncHandler(authController.loginMotoboy));
+router.post('/motoboy', loginLimiter, asyncHandler(authController.loginMotoboy));
 router.post('/refresh', asyncHandler(authController.refresh));
 router.get('/me', authMiddleware, asyncHandler(authController.getMe));
 router.post('/logout', authMiddleware, asyncHandler(authController.logout));
-router.post('/password-reset/request', asyncHandler(authController.requestPasswordReset));
+router.post('/password-reset/request', passwordResetLimiter, asyncHandler(authController.requestPasswordReset));
 router.post('/password-reset/confirm', asyncHandler(authController.resetPassword));
 
 export default router;

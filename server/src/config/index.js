@@ -1,5 +1,15 @@
 import 'dotenv/config';
 
+// Validação de secrets obrigatórios em produção
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET não definida — defina a variável de ambiente antes de iniciar em produção.');
+  }
+  if (!process.env.JWT_REFRESH_SECRET) {
+    throw new Error('JWT_REFRESH_SECRET não definida — defina a variável de ambiente antes de iniciar em produção.');
+  }
+}
+
 export const config = {
   port: process.env.BACKEND_PORT || 4000,
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -14,9 +24,9 @@ export const config = {
   },
 
   jwt: {
-    secret: process.env.JWT_SECRET || 'change-me-in-production',
+    secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'change-me-refresh-in-production',
+    refreshSecret: process.env.JWT_REFRESH_SECRET,
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
 

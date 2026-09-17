@@ -383,21 +383,15 @@ export const orderService = {
       if (!driver) throw httpError('Motoboy não encontrado', 404);
       if (!driver.active) throw httpError('Motoboy inativo', 400);
 
-      // 4. Atualizar pedido (preserva regra Base44: status → saiu_para_entrega)
+      // 4. Atribuir motoboy SEM alterar status (preserva máquina de estados)
+      //    O status para 'saiu_para_entrega' deve ser feito via updateStatus,
+      //    que respeita as transições válidas (pronto → saiu_para_entrega).
       const now = new Date().toISOString();
-      const historyEntry = {
-        status: 'saiu_para_entrega',
-        date: now,
-        by: `admin — designou ${driver.name}`,
-      };
-
       await client.query(
         `UPDATE orders
-           SET motoboy_id = $2, motoboy_name = $3, motoboy_assigned_at = $4, accepted_at = $4,
-               status = 'saiu_para_entrega',
-               status_history = status_history || $5::jsonb
+           SET motoboy_id = $2, motoboy_name = $3, motoboy_assigned_at = $4
          WHERE id = $1`,
-        [orderId, driver.id, driver.name, now, JSON.stringify([historyEntry])]
+        [orderId, driver.id, driver.name, now]
       );
 
       // 5. Motoboy → ocupado
@@ -540,6 +534,34 @@ export const orderService = {
          WHERE id = $1`,
         [orderId, newStatus, JSON.stringify([historyEntry])]
       );
+
+      // Cancelamento: devolver estoque dos itens não-kit e decrementar total_sold
+      if (newStatus === 'cancelado' && order.status !== 'cancelado') {
+        const items = Array.isArray(order.items) ? order.items : [];
+        const today = new Date().toISOString().split('T')[0];
+
+        for (const item of items) {
+          if (item.is_kit || !item.product_id) continue;
+
+          const { rows: [updatedProduct] } = await client.query(
+            'UPDATE products SET stock = stock + $1, total_sold = total_sold - $1 WHERE id = $2 RETURNING *',
+            [item.quantity, item.product_id]
+          );
+
+          await stockMovementRepository.create(
+            {
+              product_id: item.product_id,
+              product_name: item.product_name,
+              type: 'entrada',
+              quantity: item.quantity,
+              date: today,
+              reason: `Cancelamento pedido #${order.order_number}`,
+              stock_after: updatedProduct ? updatedProduct.stock : null,
+            },
+            client
+          );
+        }
+      }
 
       return { success: true, status: newStatus };
     });
