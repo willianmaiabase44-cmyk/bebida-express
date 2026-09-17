@@ -4,6 +4,7 @@ import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 import * as authService from '@/services/authService';
 import { setAuthRedirectHandler } from '@/lib/apiClient';
+import { isServerDown } from '@/lib/serverHealth';
 
 const ADMIN_KEY = 'smoke_admin_auth';
 
@@ -59,6 +60,21 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(true);
       const stored = authService.getStoredAdmin();
       if (!stored?.access_token) {
+        // Sem token do /server — tenta Base44 auth (fallback de preview)
+        if (isServerDown()) {
+          try {
+            if (await base44.auth.isAuthenticated()) {
+              const me = await base44.auth.me();
+              if (me && (me.role === 'admin' || me.role === 'user')) {
+                setUser({ ...me, type: 'admin' });
+                setIsAuthenticated(true);
+                setIsLoadingAuth(false);
+                setAuthChecked(true);
+                return;
+              }
+            }
+          } catch {}
+        }
         setUser(null);
         setIsAuthenticated(false);
         setIsLoadingAuth(false);
@@ -77,6 +93,21 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(false);
         }
       } catch {
+        // /server fora — tenta Base44 auth antes de deslogar
+        if (isServerDown()) {
+          try {
+            if (await base44.auth.isAuthenticated()) {
+              const me = await base44.auth.me();
+              if (me && (me.role === 'admin' || me.role === 'user')) {
+                setUser({ ...me, type: 'admin' });
+                setIsAuthenticated(true);
+                setIsLoadingAuth(false);
+                setAuthChecked(true);
+                return;
+              }
+            }
+          } catch {}
+        }
         localStorage.removeItem(ADMIN_KEY);
         setUser(null);
         setIsAuthenticated(false);

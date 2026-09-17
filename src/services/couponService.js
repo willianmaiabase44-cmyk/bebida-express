@@ -1,20 +1,17 @@
 // ============================================================
-// couponService.js — Validação de cupom (frontend)
-// ============================================================
-// Chama POST /api/coupons/validate no /server. Nenhuma dependência do Base44.
-// Apenas valida (preview) — não consome o cupom. O consumo acontece
-// na transação do placeOrder no backend.
+// couponService.js — Cupons com fallback Base44
 // ============================================================
 
 import { api } from '@/lib/apiClient';
+import { isServerDown, tryServer, invokeBase44 } from '@/lib/serverHealth';
 
 export async function validateCoupon(couponCode, customerId, subtotal) {
-  const res = await api.post('/coupons/validate', {
-    coupon_code: couponCode,
-    customer_id: customerId,
-    subtotal,
-  });
-  const data = await res.json().catch(() => ({}));
-  // /validate sempre retorna 200 com { valid: true/false }
-  return data;
+  if (!isServerDown()) {
+    const result = await tryServer(() => api.post('/coupons/validate', { coupon_code: couponCode, customer_id: customerId, subtotal }));
+    if (result.ok || result.res) {
+      return await result.res.json().catch(() => ({}));
+    }
+  }
+  // Fallback: Base44 validateCoupon function
+  return await invokeBase44('validateCoupon', { coupon_code: couponCode, customer_id: customerId, subtotal });
 }
