@@ -6,10 +6,8 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import CustomerRoute from '@/components/CustomerRoute';
-import MotoboyRoute from '@/components/MotoboyRoute';
 import { CartProvider } from '@/context/CartContext';
 import { CustomerProvider } from '@/context/CustomerContext';
-import { MotoboyProvider } from '@/context/MotoboyContext';
 
 // Public pages
 import Store from '@/pages/Store';
@@ -45,13 +43,6 @@ import DeliveryReviews from '@/pages/admin/DeliveryReviews';
 import AccessLinks from '@/pages/admin/AccessLinks';
 import Coupons from '@/pages/admin/Coupons';
 
-// Motoboy pages
-import MotoboyLogin from '@/pages/motoboy/MotoboyLogin';
-import MotoboyLayout from '@/components/motoboy/MotoboyLayout';
-import MotoboyDashboard from '@/pages/motoboy/MotoboyDashboard';
-import MotoboyDeliveryDetail from '@/pages/motoboy/MotoboyDeliveryDetail';
-import MotoboyHistory from '@/pages/motoboy/MotoboyHistory';
-
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings } = useAuth();
 
@@ -76,16 +67,6 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-
-      {/* Motoboy routes */}
-      <Route path="/motoboy/login" element={<MotoboyLogin />} />
-      <Route element={<MotoboyRoute />}>
-        <Route element={<MotoboyLayout />}>
-          <Route path="/motoboy" element={<MotoboyDashboard />} />
-          <Route path="/motoboy/entrega/:id" element={<MotoboyDeliveryDetail />} />
-          <Route path="/motoboy/historico" element={<MotoboyHistory />} />
-        </Route>
-      </Route>
 
       {/* Customer routes - requires customer phone session */}
       <Route element={<CustomerRoute />}>
@@ -127,13 +108,11 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <CartProvider>
           <CustomerProvider>
-            <MotoboyProvider>
-              <Router>
-                <AuthenticatedApp />
-              </Router>
-              <Toaster />
-              <SonnerToaster position="top-center" theme="dark" />
-            </MotoboyProvider>
+            <Router>
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+            <SonnerToaster position="top-center" theme="dark" />
           </CustomerProvider>
         </CartProvider>
       </QueryClientProvider>
