@@ -1,0 +1,52 @@
+[
+  {
+    "lng": -51.0490139,
+    "city": "Gravataí",
+    "delivery_state": "RS",
+    "max_delivery_radius_km": 5,
+    "min_freight": 3,
+    "cep": "94120-000",
+    "freight_per_km": 2.5,
+    "number": "1122",
+    "free_freight_threshold": 100,
+    "estimated_delivery_minutes": 30,
+    "delivery_enabled": true,
+    "street": "Avenida Afonso Arinos",
+    "district": "Morada do Vale II",
+    "store_name": "Smoke Bebidas",
+    "state": "RS",
+    "complement": "",
+    "delivery_city": "Gravataí",
+    "lat": -29.9121139,
+    "freight_table": [
+      {
+        "price": 5,
+        "distance_km": 3
+      },
+      {
+        "price": 8,
+        "distance_km": 5
+      },
+      {
+        "price": 10,
+        "distance_km": 10
+      },
+      {
+        "price": 20,
+        "distance_km": 15
+      },
+      {
+        "price": 30,
+        "distance_km": 30
+      },
+      {
+        "price": 50,
+        "distance_km": 50
+      }
+    ],
+    "id": "6a7bc2f7e40e04ac3e46315c",
+    "created_date": "2026-08-12T00:48:55.182000",
+    "updated_date": "2026-08-13T14:44:17.360000",
+    "created_by_id": "service_22fa904b-ff91-4ce8-ab87-25ae5d494811"
+  }
+]

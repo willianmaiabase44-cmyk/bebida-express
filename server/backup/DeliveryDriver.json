@@ -1,0 +1,19 @@
+[
+  {
+    "password_salt": "fbd956584b65160c6d148839ac06be65",
+    "total_deliveries": 2,
+    "phone": "51997529440",
+    "password_hash": "db804e7cfdd5a4dcf76b4b4e8950adc7175d4f7b7de172d66c98f6d8d4722370",
+    "name": "Maia",
+    "rating": 5,
+    "vehicle_type": "moto",
+    "active": true,
+    "plate": "abcd123",
+    "login": "maia",
+    "status": "disponivel",
+    "id": "6a7bc5b35528a4f511ea434c",
+    "created_date": "2026-08-12T01:00:35.649000",
+    "updated_date": "2026-08-14T11:23:33.424000",
+    "created_by_id": "6a196352fac9a14d99de4406"
+  }
+]

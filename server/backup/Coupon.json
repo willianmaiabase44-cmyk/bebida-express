@@ -1,0 +1,18 @@
+[
+  {
+    "end_date": "2026-08-15",
+    "code": "SMOKE10",
+    "max_uses": 3,
+    "used_count": 0,
+    "active": false,
+    "per_customer_limit": 1,
+    "discount_percent": 10,
+    "used_by": [],
+    "min_order_value": 50,
+    "start_date": "2026-08-15",
+    "id": "6a7efaaab32dc00865009147",
+    "created_date": "2026-08-14T11:23:22.459000",
+    "updated_date": "2026-08-14T11:23:26.430000",
+    "created_by_id": "6a196352fac9a14d99de4406"
+  }
+]

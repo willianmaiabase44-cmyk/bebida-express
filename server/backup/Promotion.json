@@ -1,0 +1,30 @@
+[
+  {
+    "end_date": "2026-06-15",
+    "original_price": 11.9,
+    "product_id": "6a1964d9fac9a14d99de44f9",
+    "promo_price": 8.9,
+    "active": true,
+    "banner_url": null,
+    "product_name": "Red Bull 250ml",
+    "start_date": "2026-05-15",
+    "id": "6a1964e3fac9a14d99de450a",
+    "created_date": "2026-05-29T10:05:23.564000",
+    "updated_date": "2026-05-29T10:05:23.564000",
+    "created_by_id": "6a196352fac9a14d99de4406"
+  },
+  {
+    "end_date": "2026-06-30",
+    "original_price": 12.9,
+    "product_id": "6a1964d9fac9a14d99de44f4",
+    "promo_price": 9.9,
+    "active": true,
+    "banner_url": null,
+    "product_name": "Heineken 600ml",
+    "start_date": "2026-05-01",
+    "id": "6a1964e3fac9a14d99de4509",
+    "created_date": "2026-05-29T10:05:23.564000",
+    "updated_date": "2026-05-29T10:05:23.564000",
+    "created_by_id": "6a196352fac9a14d99de4406"
+  }
+]

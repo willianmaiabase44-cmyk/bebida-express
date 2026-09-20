@@ -1,0 +1,119 @@
+[
+  {
+    "date": "2026-08-22",
+    "total": 10.53,
+    "amount_paid": 10.53,
+    "change": 0,
+    "channel": "pdv",
+    "items": [
+      {
+        "quantity": 1,
+        "product_name": "Gelo 5kg",
+        "price": 8.03,
+        "product_id": "6a1964d9fac9a14d99de44ff"
+      },
+      {
+        "quantity": 1,
+        "product_name": "Água Mineral 500ml",
+        "price": 2.5,
+        "product_id": "6a1964d9fac9a14d99de44fb"
+      }
+    ],
+    "payment_method": "pix",
+    "status": "concluida",
+    "id": "6a898fad81027a1c53c2f251",
+    "created_date": "2026-08-22T12:01:49.879000",
+    "updated_date": "2026-08-22T12:01:49.879000",
+    "created_by_id": "anonymous"
+  },
+  {
+    "date": "2026-08-14",
+    "total": 9.9,
+    "amount_paid": 9.9,
+    "change": 0,
+    "channel": "pdv",
+    "items": [
+      {
+        "quantity": 1,
+        "product_name": "Monster Energy 473ml",
+        "price": 9.9,
+        "product_id": "6a1964d9fac9a14d99de44fa"
+      }
+    ],
+    "payment_method": "cartao_debito",
+    "status": "concluida",
+    "id": "6a7efa266ae062fc859f41b1",
+    "created_date": "2026-08-14T11:21:10.037000",
+    "updated_date": "2026-08-14T11:21:10.037000",
+    "created_by_id": "6a196352fac9a14d99de4406"
+  },
+  {
+    "date": "2026-08-13",
+    "total": 8,
+    "amount_paid": 8,
+    "change": 0,
+    "channel": "pdv",
+    "items": [
+      {
+        "quantity": 1,
+        "product_name": "Gelo 5kg",
+        "price": 8,
+        "product_id": "6a1964d9fac9a14d99de44ff"
+      }
+    ],
+    "payment_method": "dinheiro",
+    "status": "concluida",
+    "id": "6a7e2c8c1913802003d28db6",
+    "created_date": "2026-08-13T20:43:56.206000",
+    "updated_date": "2026-08-13T20:43:56.206000",
+    "created_by_id": "6a196352fac9a14d99de4406"
+  },
+  {
+    "date": "2026-08-13",
+    "total": 9.9,
+    "amount_paid": 20,
+    "change": 10.1,
+    "channel": "pdv",
+    "items": [
+      {
+        "quantity": 1,
+        "product_name": "Monster Energy 473ml",
+        "price": 9.9,
+        "product_id": "6a1964d9fac9a14d99de44fa"
+      }
+    ],
+    "payment_method": "dinheiro",
+    "status": "concluida",
+    "id": "6a7dccc59c4a7b4d42a1dcdc",
+    "created_date": "2026-08-13T13:55:17.904000",
+    "updated_date": "2026-08-13T13:55:17.904000",
+    "created_by_id": "6a196352fac9a14d99de4406"
+  },
+  {
+    "date": "2026-08-12",
+    "total": 17.9,
+    "amount_paid": 17.9,
+    "change": 0,
+    "channel": "pdv",
+    "items": [
+      {
+        "quantity": 1,
+        "product_name": "Monster Energy 473ml",
+        "price": 9.9,
+        "product_id": "6a1964d9fac9a14d99de44fa"
+      },
+      {
+        "quantity": 1,
+        "product_name": "Gelo 5kg",
+        "price": 8,
+        "product_id": "6a1964d9fac9a14d99de44ff"
+      }
+    ],
+    "payment_method": "pix",
+    "status": "concluida",
+    "id": "6a7bc609b978480d48c44180",
+    "created_date": "2026-08-12T01:02:01.522000",
+    "updated_date": "2026-08-12T01:02:01.522000",
+    "created_by_id": "6a196352fac9a14d99de4406"
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Cliente Teste Preview",
+    "phone": "51988887777",
+    "email": null,
+    "id": "6aac071830235dd63e536c4c",
+    "created_date": "2026-09-17T15:28:24.686000",
+    "updated_date": "2026-09-17T15:28:24.686000",
+    "created_by_id": "service_ead1e09a-f9a3-4ea2-8c04-967de8451f40"
+  },
+  {
+    "name": "Jonatas",
+    "phone": "51983296506",
+    "email": null,
+    "id": "6a7f3c6c8edd1d3cf942e39a",
+    "created_date": "2026-08-14T16:03:56.037000",
+    "updated_date": "2026-08-14T16:03:56.037000",
+    "created_by_id": "service_ead1e09a-f9a3-4ea2-8c04-967de8451f40"
+  },
+  {
+    "name": "Willian Maia",
+    "phone": "51997529440",
+    "email": null,
+    "id": "6a7bcc31fd08c6c52a638534",
+    "created_date": "2026-08-12T01:28:17.413000",
+    "updated_date": "2026-08-12T01:28:17.413000",
+    "created_by_id": "service_ead1e09a-f9a3-4ea2-8c04-967de8451f40"
+  }
+]
