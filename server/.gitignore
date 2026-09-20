@@ -3,3 +3,6 @@ node_modules/
 uploads/*
 !uploads/.gitkeep
 *.log
+
+# Backup de dados — NUNCA commitar (contém dados de clientes e hashes)
+backup/
