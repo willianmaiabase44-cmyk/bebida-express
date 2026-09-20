@@ -79,22 +79,6 @@ function logInconsistency(entity, recordId, message) {
   inconsistencies.push({ entity, recordId, message });
 }
 
-// Substitui IDs em arrays JSONB (items, used_by)
-function replaceIdsInJsonArray(arr, idField, entityName) {
-  if (!Array.isArray(arr)) return arr;
-  return arr.map(item => {
-    if (!item || typeof item !== 'object') return item;
-    const oldId = item[idField];
-    if (!oldId) return item;
-    const newId = mapId(entityName, oldId);
-    if (newId) {
-      return { ...item, [idField]: newId };
-    }
-    // ID órfão — preserva original como texto (histórico)
-    return item;
-  });
-}
-
 // Validação financeira: subtotal + freight - discount ≈ total
 function validateFinancial(order) {
   const calcTotal = (Number(order.subtotal) || 0) + (Number(order.freight) || 0) - (Number(order.discount) || 0);
@@ -173,7 +157,6 @@ async function importSuppliers(client, dryRun) {
     const newId = genUuid();
     idMap.Supplier[r.id] = newId;
     if (dryRun) { stats.Supplier.imported++; continue; }
-    if (data.length === 0) continue;
 
     const exists = await client.query('SELECT 1 FROM suppliers WHERE id = $1', [newId]);
     if (exists.rows.length > 0) { stats.Supplier.skipped++; continue; }
@@ -650,12 +633,23 @@ async function main() {
       return;
     }
 
-    // Verifica se já existem dados (idempotência)
-    const { rows: existingOrders } = await client.query('SELECT COUNT(*) as cnt FROM orders');
-    if (parseInt(existingOrders[0].cnt, 10) > 0 && !dryRun) {
-      console.log(`⚠️  Banco já contém ${existingOrders[0].cnt} pedidos. Use --dry-run para simular ou limpe o banco antes de importar.`);
-      console.log('   Para limpar: TRUNCATE todas as tabelas em ordem reversa de dependência.');
-      process.exit(1);
+    // Verifica se já existem dados (idempotência) — checa múltiplas tabelas-chave
+    if (!dryRun) {
+      const { rows: existing } = await client.query(`
+        SELECT
+          (SELECT COUNT(*) FROM store_settings) as ss,
+          (SELECT COUNT(*) FROM products) as prod,
+          (SELECT COUNT(*) FROM orders) as ord,
+          (SELECT COUNT(*) FROM customers) as cust
+      `);
+      const total = parseInt(existing[0].ss, 10) + parseInt(existing[0].prod, 10)
+        + parseInt(existing[0].ord, 10) + parseInt(existing[0].cust, 10);
+      if (total > 0) {
+        console.log(`⚠️  Banco já contém dados (${total} registros em tabelas-chave).`);
+        console.log('   Use --dry-run para simular, ou limpe o banco antes de importar.');
+        console.log('   Para limpar: TRUNCATE todas as tabelas em ordem reversa de dependência.');
+        process.exit(1);
+      }
     }
 
     await client.query('BEGIN');
