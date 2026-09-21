@@ -20,7 +20,7 @@ export default function StoreHeader({ searchQuery, onSearchChange, activeCategor
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
             <img
-              src="https://media.base44.com/images/public/6a196352fac9a14d99de4405/0bcaa04b8_generated_image.png"
+              src="/logo.png"
               alt="Smoke Bebidas"
               className="h-10 w-auto object-contain"
             />

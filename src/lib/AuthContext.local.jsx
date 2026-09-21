@@ -1,9 +1,16 @@
+// ============================================================
+// AuthContext.local.jsx — VERSÃO STANDALONE (Trae IDE)
+// ============================================================
+// Use este arquivo no Trae IDE / VS Code (ambiente local).
+// Não importa o SDK do Base44 — autenticação exclusiva via /server.
+//
+// COMO USAR:
+//   cp src/lib/AuthContext.local.jsx src/lib/AuthContext.jsx
+// ============================================================
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
 import * as authService from '@/services/authService';
 import { setAuthRedirectHandler } from '@/lib/apiClient';
-
-// Auth is handled exclusively by /server API (authService)
 
 const AuthContext = createContext();
 

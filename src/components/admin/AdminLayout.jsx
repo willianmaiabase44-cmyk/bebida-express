@@ -57,7 +57,7 @@ export default function AdminLayout() {
   }, []);
 
   const handleLogout = () => {
-    // Logout via /server (authService) — não usa base44.auth
+    // Logout via /server (authService)
     import('@/services/authService').then(({ logout }) => {
       logout().then(() => {
         window.location.href = '/login';
@@ -88,7 +88,7 @@ export default function AdminLayout() {
         <div className="flex items-center justify-between h-16 px-5 border-b border-border">
           <div className="flex items-center gap-2">
             <img
-              src="https://media.base44.com/images/public/6a196352fac9a14d99de4405/0bcaa04b8_generated_image.png"
+              src="/logo.png"
               alt="Smoke Bebidas"
               className="h-8 w-auto object-contain"
             />
