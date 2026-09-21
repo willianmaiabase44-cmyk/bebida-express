@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { listOrders, updateOrderStatus, assignDriver } from "@/services/orderService";
+import { listMotoboys } from "@/services/motoboyService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,10 +35,10 @@ export default function Orders() {
 
   const load = async () => {
     try {
-      const list = await base44.entities.Order.list("-created_date", 100);
+      const list = await listOrders();
       setOrders(list || []);
-      const drivers = await base44.entities.DeliveryDriver.filter({ active: true });
-      setMotoboys(drivers || []);
+      const allDrivers = await listMotoboys();
+      setMotoboys((allDrivers || []).filter(d => d.active));
     } catch (e) {
       toast.error("Erro ao carregar pedidos");
     } finally {
@@ -47,15 +48,13 @@ export default function Orders() {
 
   useEffect(() => { load(); }, []);
 
-  const updateStatus = async (orderId, newStatus, extra = {}) => {
+  const updateStatus = async (orderId, newStatus) => {
     try {
-      const order = orders.find(o => o.id === orderId);
-      const history = [...(order.status_history || []), { status: newStatus, date: new Date().toISOString(), by: "admin" }];
-      await base44.entities.Order.update(orderId, { status: newStatus, ...extra, status_history: history });
+      await updateOrderStatus(orderId, newStatus);
       toast.success("Status atualizado");
       load();
     } catch (e) {
-      toast.error("Erro ao atualizar");
+      toast.error(e.message || "Erro ao atualizar");
     }
   };
 
@@ -63,19 +62,11 @@ export default function Orders() {
     const motoboy = motoboys.find(m => m.id === motoboyId);
     if (!motoboy) return;
     try {
-      const res = await base44.functions.invoke("motoboyManageOrder", {
-        action: "assign",
-        order_id: orderId,
-        motoboy_id: motoboyId,
-      });
-      if (res.data?.error) {
-        toast.error(res.data.error);
-      } else {
-        toast.success(`${motoboy.name} enviado para a entrega`);
-        load();
-      }
+      await assignDriver(orderId, motoboyId);
+      toast.success(`${motoboy.name} enviado para a entrega`);
+      load();
     } catch (e) {
-      toast.error("Erro ao designar motoboy");
+      toast.error(e.message || "Erro ao designar motoboy");
     }
   };
 

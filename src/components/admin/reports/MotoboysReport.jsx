@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listMotoboys } from '@/services/motoboyService';
+import { listOrders } from '@/services/orderService';
+import { listReviews } from '@/services/reviewService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bike, Package, CheckCircle2, XCircle, Star } from 'lucide-react';
@@ -14,9 +16,9 @@ export default function MotoboysReport() {
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data: drivers = [], isLoading } = useQuery({ queryKey: ['rpt-motoboys'], queryFn: () => base44.entities.DeliveryDriver.list() });
-  const { data: orders = [] } = useQuery({ queryKey: ['rpt-motoboys-orders'], queryFn: () => base44.entities.Order.list('-created_date', 1000) });
-  const { data: reviews = [] } = useQuery({ queryKey: ['rpt-motoboys-reviews'], queryFn: () => base44.entities.DeliveryReview.list('-created_date', 500) });
+  const { data: drivers = [], isLoading } = useQuery({ queryKey: ['rpt-motoboys'], queryFn: () => listMotoboys() });
+  const { data: orders = [] } = useQuery({ queryKey: ['rpt-motoboys-orders'], queryFn: () => listOrders() });
+  const { data: reviews = [] } = useQuery({ queryKey: ['rpt-motoboys-reviews'], queryFn: () => listReviews() });
 
   useEffect(() => {
     if (preset !== 'custom' && preset !== 'all') { const r = getPresetRange(preset); setDateFrom(r.from); setDateTo(r.to); }

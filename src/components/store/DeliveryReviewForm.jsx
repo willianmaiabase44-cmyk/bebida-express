@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { createReview } from '@/services/reviewService';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Star, Loader2 } from 'lucide-react';
@@ -18,18 +18,14 @@ export default function DeliveryReviewForm({ order, customer, onSubmitted }) {
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke('submitDeliveryReview', {
+      await createReview({
         order_id: order.id,
         customer_id: customer.id,
         rating,
         comment: comment.trim(),
       });
-      if (res.data?.error) {
-        toast.error(res.data.error);
-      } else {
-        toast.success('Avaliação enviada. Obrigado!');
-        onSubmitted?.();
-      }
+      toast.success('Avaliação enviada. Obrigado!');
+      onSubmitted?.();
     } catch (e) {
       toast.error(e.response?.data?.error || 'Erro ao enviar avaliação');
     } finally {

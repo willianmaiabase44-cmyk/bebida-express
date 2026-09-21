@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listProducts } from '@/services/productService';
+import { listMovements } from '@/services/stockService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package, AlertTriangle, XCircle, ArrowLeftRight, DollarSign } from 'lucide-react';
@@ -15,8 +16,8 @@ export default function StockReport() {
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data: products = [], isLoading } = useQuery({ queryKey: ['rpt-stock-products'], queryFn: () => base44.entities.Product.list('-created_date', 500) });
-  const { data: movements = [] } = useQuery({ queryKey: ['rpt-stock-movements'], queryFn: () => base44.entities.StockMovement.list('-created_date', 1000) });
+  const { data: products = [], isLoading } = useQuery({ queryKey: ['rpt-stock-products'], queryFn: () => listProducts({ includeInactive: true }) });
+  const { data: movements = [] } = useQuery({ queryKey: ['rpt-stock-movements'], queryFn: () => listMovements() });
 
   useEffect(() => {
     if (preset !== 'custom' && preset !== 'all') { const r = getPresetRange(preset); setDateFrom(r.from); setDateTo(r.to); }

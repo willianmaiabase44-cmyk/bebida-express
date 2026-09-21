@@ -3,6 +3,8 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from '../config/index.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { adminOnly } from '../middleware/adminOnly.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -42,7 +44,7 @@ const router = Router();
 // POST /api/upload — upload de imagem (produto, banner, etc.)
 // Campo esperado: file
 // Wrapper: captura erros do Multer (file filter, tamanho) e retorna 400/413
-router.post('/', (req, res, next) => {
+router.post('/', authMiddleware, adminOnly, (req, res, next) => {
   upload.single('file')(req, res, (err) => {
     if (err) {
       const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;

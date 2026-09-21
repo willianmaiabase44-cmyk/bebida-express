@@ -1,5 +1,8 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { listProducts } from '@/services/productService';
+import { listPromotions } from '@/services/promotionService';
+import { listMovements } from '@/services/stockService';
+import { listOrders } from '@/services/orderService';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, AlertTriangle, Tag, ArrowLeftRight, TrendingUp, ClipboardList } from 'lucide-react';
@@ -10,22 +13,22 @@ import { Link } from 'react-router-dom';
 export default function Dashboard() {
   const { data: products = [], isLoading: loadingP } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: () => base44.entities.Product.list('-created_date', 500),
+    queryFn: () => listProducts({ includeInactive: true }),
   });
 
   const { data: promotions = [] } = useQuery({
     queryKey: ['admin-promos'],
-    queryFn: () => base44.entities.Promotion.filter({ active: true }),
+    queryFn: () => listPromotions(),
   });
 
   const { data: movements = [] } = useQuery({
     queryKey: ['admin-movements'],
-    queryFn: () => base44.entities.StockMovement.list('-created_date', 500),
+    queryFn: () => listMovements(),
   });
 
   const { data: recentOrders = [] } = useQuery({
     queryKey: ['admin-recent-orders'],
-    queryFn: () => base44.entities.Order.list('-created_date', 5),
+    queryFn: () => listOrders(),
     refetchInterval: 15000,
   });
 

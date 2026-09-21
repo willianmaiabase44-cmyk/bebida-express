@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { listAddresses, createAddress, updateAddress, deleteAddress } from "@/services/addressService";
+import { getMyOrders } from "@/services/orderService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -41,11 +42,11 @@ export default function MyAccount() {
     if (!customer) return;
     try {
       const [addrRes, ordersRes] = await Promise.all([
-        base44.functions.invoke("manageCustomerAddress", { action: "list", customer_id: customer.id }),
-        base44.functions.invoke("getCustomerOrders", { customer_id: customer.id }),
+        listAddresses(customer.id),
+        getMyOrders(customer.id),
       ]);
-      setAddresses(addrRes.data?.addresses || []);
-      setOrders(ordersRes.data?.orders || []);
+      setAddresses(addrRes || []);
+      setOrders(ordersRes || []);
     } catch (e) {
       toast.error("Erro ao carregar dados");
     } finally {
@@ -58,18 +59,9 @@ export default function MyAccount() {
   const handleSaveAddress = async (formData) => {
     try {
       if (editAddress?.id) {
-        await base44.functions.invoke("manageCustomerAddress", {
-          action: "update",
-          customer_id: customer.id,
-          address_id: editAddress.id,
-          address: formData,
-        });
+        await updateAddress(editAddress.id, formData);
       } else {
-        await base44.functions.invoke("manageCustomerAddress", {
-          action: "create",
-          customer_id: customer.id,
-          address: formData,
-        });
+        await createAddress(customer.id, formData);
       }
       toast.success(editAddress?.id ? "Endereço atualizado!" : "Endereço adicionado!");
       setDialogOpen(false);
@@ -83,11 +75,7 @@ export default function MyAccount() {
   const handleDeleteAddress = async (id) => {
     if (!confirm("Excluir este endereço?")) return;
     try {
-      await base44.functions.invoke("manageCustomerAddress", {
-        action: "delete",
-        customer_id: customer.id,
-        address_id: id,
-      });
+      await deleteAddress(id);
       toast.success("Endereço excluído");
       load();
     } catch {

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, MapPin } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { getDeliveryRoute } from '@/services/freightService';
 import { toast } from 'sonner';
 import { formatPrice } from '@/lib/constants';
 
@@ -38,13 +38,7 @@ export default function DeliveryForm({ open, onClose, onSave, delivery }) {
     }
     setGeocoding(true);
     try {
-      const res = await base44.functions.invoke('getDeliveryRoute', { address: formData.address });
-      const routeData = res.data;
-      if (routeData.error) {
-        toast.error(routeData.error);
-        setGeocoding(false);
-        return;
-      }
+      const routeData = await getDeliveryRoute(formData.address);
       onSave({
         ...formData,
         total: parseFloat(formData.total) || 0,

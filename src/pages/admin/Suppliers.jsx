@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/supplierService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -18,7 +18,7 @@ export default function Suppliers() {
 
   const { data: suppliers = [], isLoading } = useQuery({
     queryKey: ['suppliers'],
-    queryFn: () => base44.entities.Supplier.list(),
+    queryFn: () => listSuppliers(),
   });
 
   const filtered = suppliers.filter(s =>
@@ -32,10 +32,10 @@ export default function Suppliers() {
     setSaving(true);
     try {
       if (editing) {
-        await base44.entities.Supplier.update(editing.id, formData);
+        await updateSupplier(editing.id, formData);
         toast.success('Fornecedor atualizado!');
       } else {
-        await base44.entities.Supplier.create(formData);
+        await createSupplier(formData);
         toast.success('Fornecedor cadastrado!');
       }
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
@@ -50,7 +50,7 @@ export default function Suppliers() {
   const handleDelete = async (supplier) => {
     if (!confirm(`Excluir fornecedor ${supplier.name}?`)) return;
     try {
-      await base44.entities.Supplier.delete(supplier.id);
+      await deleteSupplier(supplier.id);
       toast.success('Fornecedor excluído');
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
     } catch (err) {
@@ -60,7 +60,7 @@ export default function Suppliers() {
 
   const toggleActive = async (supplier) => {
     try {
-      await base44.entities.Supplier.update(supplier.id, { active: !supplier.active });
+      await updateSupplier(supplier.id, { active: !supplier.active });
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
     } catch (err) {
       toast.error('Erro ao atualizar status');

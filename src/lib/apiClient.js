@@ -8,7 +8,7 @@
 // área da app usa apenas um tipo por vez.
 // ============================================================
 
-const API_BASE_URL = import.meta.env.VITE_SERVER_API_URL || '/server-api';
+export const API_BASE_URL = import.meta.env.VITE_SERVER_API_URL || '/server-api';
 
 const STORAGE_KEYS = {
   admin: 'smoke_admin_auth',
@@ -141,8 +141,9 @@ async function doRefresh() {
 
 export async function apiRequest(path, options = {}) {
   const token = getAccessToken();
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
@@ -206,6 +207,16 @@ function triggerAuthRedirect() {
   if (redirectHandler) {
     redirectHandler();
   }
+}
+
+// Helper: chama a API e retorna JSON parseado, lançando erro em caso de falha
+export async function apiJson(path, options = {}) {
+  const res = await apiRequest(path, options);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || data.message || `Erro ${res.status}`);
+  }
+  return res.json();
 }
 
 export { clearAuthData, getAccessToken, getAuthData };

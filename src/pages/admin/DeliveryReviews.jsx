@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getAllReviews } from '@/services/motoboyService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star, Bike, Loader2, MessageSquare } from 'lucide-react';
@@ -11,8 +11,8 @@ export default function DeliveryReviews() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await base44.functions.invoke('getMotoboyReviews', {});
-        if (res.data?.motoboys) setData(res.data.motoboys);
+        const res = await getAllReviews();
+        if (res?.motoboys) setData(res.motoboys);
       } catch (e) {
         console.error(e);
       } finally {

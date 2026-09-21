@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listProducts } from '@/services/productService';
+import { listOrders } from '@/services/orderService';
+import { listSales } from '@/services/saleService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { formatPrice, CATEGORIES } from '@/lib/constants';
@@ -14,9 +16,9 @@ export default function ProductsReport() {
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data: products = [], isLoading } = useQuery({ queryKey: ['rpt-products'], queryFn: () => base44.entities.Product.list('-created_date', 500) });
-  const { data: orders = [] } = useQuery({ queryKey: ['rpt-products-orders'], queryFn: () => base44.entities.Order.list('-created_date', 1000) });
-  const { data: sales = [] } = useQuery({ queryKey: ['rpt-products-sales'], queryFn: () => base44.entities.Sale.list('-created_date', 1000) });
+  const { data: products = [], isLoading } = useQuery({ queryKey: ['rpt-products'], queryFn: () => listProducts({ includeInactive: true }) });
+  const { data: orders = [] } = useQuery({ queryKey: ['rpt-products-orders'], queryFn: () => listOrders() });
+  const { data: sales = [] } = useQuery({ queryKey: ['rpt-products-sales'], queryFn: () => listSales() });
 
   useEffect(() => {
     if (preset !== 'custom' && preset !== 'all') { const r = getPresetRange(preset); setDateFrom(r.from); setDateTo(r.to); }

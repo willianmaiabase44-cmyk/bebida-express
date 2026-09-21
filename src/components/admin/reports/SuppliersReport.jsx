@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listSuppliers } from '@/services/supplierService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Truck, Phone, Mail, BadgeCheck } from 'lucide-react';
@@ -12,7 +12,7 @@ export default function SuppliersReport() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  const { data: suppliers = [], isLoading } = useQuery({ queryKey: ['rpt-suppliers'], queryFn: () => base44.entities.Supplier.list() });
+  const { data: suppliers = [], isLoading } = useQuery({ queryKey: ['rpt-suppliers'], queryFn: () => listSuppliers() });
 
   const filtered = useMemo(() => {
     return suppliers.filter(s => {

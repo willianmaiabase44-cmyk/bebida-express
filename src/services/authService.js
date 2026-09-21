@@ -1,115 +1,56 @@
 // ============================================================
-// authService.js — Autenticação com fallback Base44
-// ============================================================
-// Tenta o backend /server primeiro. Se estiver fora (preview),
-// faz fallback para as funções/auth do Base44.
+// authService.js — Autenticação via API /server (sem fallback)
 // ============================================================
 
-import { api } from '@/lib/apiClient';
-import { isServerDown, markServerDown, tryServer, invokeBase44 } from '@/lib/serverHealth';
-import { base44 } from '@/api/base44Client';
+import { apiJson } from '@/lib/apiClient';
 
 const ADMIN_KEY = 'smoke_admin_auth';
 
 // --- Admin ---------------------------------------------------------
 
 export async function loginAdmin(email, password) {
-  if (!isServerDown()) {
-    const result = await tryServer(() => api.post('/auth/admin/login', { email, password }));
-    if (result.ok) {
-      const data = await result.res.json();
-      localStorage.setItem(ADMIN_KEY, JSON.stringify({
-        type: 'admin',
-        user: data.user,
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-      }));
-      return data;
-    }
-    if (!result.down) {
-      const data = await result.res.json().catch(() => ({}));
-      throw new Error(data.error || 'Credenciais inválidas');
-    }
-  }
-  // Fallback: Base44 auth
-  await base44.auth.loginViaEmailPassword(email, password);
-  const fakeSession = {
+  const data = await apiJson('/auth/admin/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+  localStorage.setItem(ADMIN_KEY, JSON.stringify({
     type: 'admin',
-    user: { email, type: 'admin', role: 'admin' },
-    access_token: 'base44-fallback-admin',
-    refresh_token: null,
-  };
-  localStorage.setItem(ADMIN_KEY, JSON.stringify(fakeSession));
-  return fakeSession;
+    user: data.user,
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+  }));
+  return data;
 }
 
 // --- Cliente -------------------------------------------------------
 
 export async function loginCustomer(phone, name) {
-  if (!isServerDown()) {
-    const result = await tryServer(() => api.post('/auth/customer', { phone, name }));
-    if (result.ok) return await result.res.json();
-    if (!result.down) {
-      const data = await result.res.json().catch(() => ({}));
-      throw new Error(data.error || 'Erro ao autenticar cliente');
-    }
-  }
-  // Fallback: Base44 customerAuth function
-  const data = await invokeBase44('customerAuth', { phone, name });
-  return {
-    access_token: 'base44-fallback-customer',
-    refresh_token: null,
-    customer: data.customer,
-    addresses: data.addresses || [],
-    is_new: data.is_new,
-    exists: data.exists,
-  };
+  return apiJson('/auth/customer', {
+    method: 'POST',
+    body: JSON.stringify({ phone, name }),
+  });
 }
 
 // --- Motoboy -------------------------------------------------------
 
 export async function loginMotoboy(login, password) {
-  if (!isServerDown()) {
-    const result = await tryServer(() => api.post('/auth/motoboy', { login, password }));
-    if (result.ok) return await result.res.json();
-    if (!result.down) {
-      const data = await result.res.json().catch(() => ({}));
-      throw new Error(data.error || 'Credenciais inválidas');
-    }
-  }
-  // Fallback: Base44 motoboyLogin function
-  const data = await invokeBase44('motoboyLogin', { login, password });
-  return {
-    access_token: 'base44-fallback-motoboy',
-    refresh_token: null,
-    motoboy: data.driver,
-  };
+  return apiJson('/auth/motoboy', {
+    method: 'POST',
+    body: JSON.stringify({ login, password }),
+  });
 }
 
 // --- Usuário atual -------------------------------------------------
 
 export async function getMe() {
-  if (!isServerDown()) {
-    const result = await tryServer(() => api.get('/auth/me'));
-    if (result.ok) return await result.res.json();
-    if (!result.down) throw new Error('Token inválido ou expirado');
-  }
-  // Fallback: Base44 auth
-  const me = await base44.auth.me();
-  return { type: 'admin', user: { ...me, type: 'admin' } };
+  return apiJson('/auth/me');
 }
 
 // --- Logout --------------------------------------------------------
 
 export async function logout() {
-  if (!isServerDown()) {
-    try {
-      await api.post('/auth/logout', {});
-    } catch {}
-  }
-  // Fallback: também tenta logout do Base44
   try {
-    await base44.auth.logout();
+    await apiJson('/auth/logout', { method: 'POST', body: '{}' });
   } catch {}
   localStorage.removeItem(ADMIN_KEY);
 }
@@ -117,28 +58,17 @@ export async function logout() {
 // --- Recuperação de senha ------------------------------------------
 
 export async function requestPasswordReset(email) {
-  if (!isServerDown()) {
-    const result = await tryServer(() => api.post('/auth/password-reset/request', { email }));
-    if (result.ok) return await result.res.json();
-    if (!result.down) {
-      const data = await result.res.json().catch(() => ({}));
-      throw new Error(data.error || 'Erro ao solicitar recuperação');
-    }
-  }
-  // Sem fallback para reset de senha — retorna sucesso genérico
-  return { success: true };
+  return apiJson('/auth/password-reset/request', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
 }
 
 export async function resetPassword(token, newPassword) {
-  if (!isServerDown()) {
-    const result = await tryServer(() => api.post('/auth/password-reset/confirm', { token, newPassword }));
-    if (result.ok) return await result.res.json();
-    if (!result.down) {
-      const data = await result.res.json().catch(() => ({}));
-      throw new Error(data.error || 'Erro ao redefinir senha');
-    }
-  }
-  throw new Error('Backend indisponível. Tente novamente mais tarde.');
+  return apiJson('/auth/password-reset/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
 }
 
 // --- Estado local --------------------------------------------------

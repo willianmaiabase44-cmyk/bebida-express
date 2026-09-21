@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listDeliveries, createDelivery, updateDelivery } from '@/services/deliveryService';
+import { listMotoboys, updateMotoboy } from '@/services/motoboyService';
+import { getDeliveryRoute } from '@/services/freightService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -49,12 +51,12 @@ export default function Deliveries() {
 
   const { data: deliveries = [], isLoading } = useQuery({
     queryKey: ['deliveries'],
-    queryFn: () => base44.entities.Delivery.list('-created_date', 50),
+    queryFn: () => listDeliveries(),
   });
 
   const { data: drivers = [] } = useQuery({
     queryKey: ['deliveryDrivers'],
-    queryFn: () => base44.entities.DeliveryDriver.list(),
+    queryFn: () => listMotoboys(),
   });
 
   const availableDrivers = drivers.filter(d => d.status === 'disponivel' && d.active !== false);
@@ -71,10 +73,10 @@ export default function Deliveries() {
     try {
       const payload = { ...formData, date: new Date().toISOString().split('T')[0] };
       if (editing) {
-        await base44.entities.Delivery.update(editing.id, payload);
+        await updateDelivery(editing.id, payload);
         toast.success('Entrega atualizada!');
       } else {
-        await base44.entities.Delivery.create(payload);
+        await createDelivery(payload);
         toast.success('Entrega criada com rota calculada!');
       }
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
@@ -89,12 +91,12 @@ export default function Deliveries() {
     if (!motoboyId) return;
     const motoboy = drivers.find(d => d.id === motoboyId);
     try {
-      await base44.entities.Delivery.update(delivery.id, {
+      await updateDelivery(delivery.id, {
         motoboy_id: motoboyId,
         motoboy_name: motoboy?.name || '',
         status: delivery.status === 'pendente' ? 'em_rota' : delivery.status,
       });
-      await base44.entities.DeliveryDriver.update(motoboyId, { status: 'ocupado' });
+      await updateMotoboy(motoboyId, { status: 'ocupado' });
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       queryClient.invalidateQueries({ queryKey: ['deliveryDrivers'] });
       toast.success(`${motoboy?.name} designado para a entrega!`);
@@ -107,17 +109,17 @@ export default function Deliveries() {
     try {
       const updates = { status };
       if (status === 'entregue' && delivery.motoboy_id) {
-        await base44.entities.DeliveryDriver.update(delivery.motoboy_id, {
+        await updateMotoboy(delivery.motoboy_id, {
           status: 'disponivel',
           total_deliveries: (drivers.find(d => d.id === delivery.motoboy_id)?.total_deliveries || 0) + 1,
         });
         queryClient.invalidateQueries({ queryKey: ['deliveryDrivers'] });
       }
       if (status === 'cancelada' && delivery.motoboy_id) {
-        await base44.entities.DeliveryDriver.update(delivery.motoboy_id, { status: 'disponivel' });
+        await updateMotoboy(delivery.motoboy_id, { status: 'disponivel' });
         queryClient.invalidateQueries({ queryKey: ['deliveryDrivers'] });
       }
-      await base44.entities.Delivery.update(delivery.id, updates);
+      await updateDelivery(delivery.id, updates);
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       toast.success(`Status: ${STATUS_LABELS[status]}`);
     } catch (err) {
@@ -130,13 +132,8 @@ export default function Deliveries() {
     setRouteData(null);
     setRouteLoading(true);
     try {
-      const res = await base44.functions.invoke('getDeliveryRoute', { address: delivery.address });
-      if (res.data?.error) {
-        toast.error(res.data.error);
-        setRouteData(null);
-      } else {
-        setRouteData(res.data);
-      }
+      const data = await getDeliveryRoute(delivery.address);
+      setRouteData(data);
     } catch (err) {
       toast.error('Erro ao buscar rota');
     }

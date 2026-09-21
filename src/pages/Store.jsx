@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { listProducts } from '@/services/productService';
+import { listPromotions } from '@/services/promotionService';
 import { useQuery } from '@tanstack/react-query';
 import StoreHeader from '@/components/store/StoreHeader';
 import PromoBanner from '@/components/store/PromoBanner';
@@ -17,12 +18,12 @@ export default function Store() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products-store'],
-    queryFn: () => base44.entities.Product.filter({ active: true }, '-created_date', 200),
+    queryFn: () => listProducts(),
   });
 
   const { data: promotions = [] } = useQuery({
     queryKey: ['promotions-store'],
-    queryFn: () => base44.entities.Promotion.filter({ active: true }),
+    queryFn: () => listPromotions(),
   });
 
   const now = new Date().toISOString().split('T')[0];

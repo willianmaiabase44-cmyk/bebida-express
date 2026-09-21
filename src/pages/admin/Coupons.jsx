@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { listCoupons, createCoupon, updateCoupon, deleteCoupon } from "@/services/couponService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ export default function Coupons() {
 
   const { data: coupons = [], isLoading } = useQuery({
     queryKey: ["coupons"],
-    queryFn: () => base44.entities.Coupon.list("-created_date", 500),
+    queryFn: () => listCoupons(),
   });
 
   const filtered = coupons.filter((c) =>
@@ -34,10 +34,10 @@ export default function Coupons() {
     setSaving(true);
     try {
       if (editTarget) {
-        await base44.entities.Coupon.update(editTarget.id, data);
+        await updateCoupon(editTarget.id, data);
         toast.success("Cupom atualizado!");
       } else {
-        await base44.entities.Coupon.create(data);
+        await createCoupon(data);
         toast.success("Cupom criado!");
       }
       setDialogOpen(false);
@@ -52,7 +52,7 @@ export default function Coupons() {
 
   const handleToggle = async (coupon) => {
     try {
-      await base44.entities.Coupon.update(coupon.id, { active: !coupon.active });
+      await updateCoupon(coupon.id, { active: !coupon.active });
       toast.success(coupon.active ? "Cupom desativado" : "Cupom ativado");
       refresh();
     } catch {
@@ -63,7 +63,7 @@ export default function Coupons() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await base44.entities.Coupon.delete(deleteTarget.id);
+      await deleteCoupon(deleteTarget.id);
       toast.success("Cupom excluído");
       setDeleteTarget(null);
       refresh();

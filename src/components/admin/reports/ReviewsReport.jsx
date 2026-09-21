@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listReviews } from '@/services/reviewService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star, MessageSquare, ThumbsUp } from 'lucide-react';
 import ReportToolbar, { getPresetRange, filterByDateRange } from './ReportToolbar';
@@ -13,7 +13,7 @@ export default function ReviewsReport() {
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data: reviews = [], isLoading } = useQuery({ queryKey: ['rpt-reviews'], queryFn: () => base44.entities.DeliveryReview.list('-created_date', 1000) });
+  const { data: reviews = [], isLoading } = useQuery({ queryKey: ['rpt-reviews'], queryFn: () => listReviews() });
 
   useEffect(() => {
     if (preset !== 'custom' && preset !== 'all') { const r = getPresetRange(preset); setDateFrom(r.from); setDateTo(r.to); }

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { createProduct, updateProduct } from '@/services/productService';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -147,10 +147,10 @@ export default function StockExportImport({ products = [] }) {
         };
         const existing = existingByName[name.toLowerCase()];
         if (existing) {
-          await base44.entities.Product.update(existing.id, data);
+          await updateProduct(existing.id, data);
           updated++;
         } else {
-          await base44.entities.Product.create(data);
+          await createProduct(data);
           created++;
         }
       }

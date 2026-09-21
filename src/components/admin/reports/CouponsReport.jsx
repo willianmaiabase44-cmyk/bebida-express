@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listPromotions } from '@/services/promotionService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tag, Calendar, TrendingDown, BadgeCheck } from 'lucide-react';
@@ -12,7 +12,7 @@ import { exportToXLSX, exportToPDF, printReport } from '@/lib/reportExport';
 export default function CouponsReport() {
   const [search, setSearch] = useState('');
 
-  const { data: promotions = [], isLoading } = useQuery({ queryKey: ['rpt-coupons'], queryFn: () => base44.entities.Promotion.list('-created_date', 500) });
+  const { data: promotions = [], isLoading } = useQuery({ queryKey: ['rpt-coupons'], queryFn: () => listPromotions(true) });
 
   const filtered = useMemo(() => {
     if (!search) return promotions;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Package, ArrowLeftRight, Tag, BarChart3, LogOut, Menu, X, Store, Zap, ShoppingCart, Bike, MapPin, ClipboardList, Settings, Truck, Link as LinkIcon } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { listOrders } from '@/services/orderService';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { formatPrice } from '@/lib/constants';
@@ -30,24 +30,30 @@ export default function AdminLayout() {
   const knownOrderIds = useRef(new Set());
 
   useEffect(() => {
-    // Carrega pedidos existentes para não disparar notificação no carregamento inicial
-    base44.entities.Order.list('-created_date', 50).then(orders => {
-      orders.forEach(o => knownOrderIds.current.add(o.id));
-    }).catch(() => {});
+    let pollTimer = null;
 
-    const unsubscribe = base44.entities.Order.subscribe((event) => {
-      if (event.type === 'create' && event.data && !knownOrderIds.current.has(event.data.id)) {
-        knownOrderIds.current.add(event.data.id);
-        const o = event.data;
-        toast.success('Novo pedido recebido!', {
-          description: `#${o.order_number || ''} — ${o.customer_name || 'Cliente'} • ${formatPrice(o.total)}`,
-          action: { label: 'Ver', onClick: () => window.location.href = '/admin/orders' },
-          duration: 8000,
+    const checkNewOrders = async () => {
+      try {
+        const orders = await listOrders();
+        orders.forEach(o => {
+          if (!knownOrderIds.current.has(o.id)) {
+            if (knownOrderIds.current.size > 0) {
+              toast.success('Novo pedido recebido!', {
+                description: `#${o.order_number || ''} — ${o.customer_name || 'Cliente'} • ${formatPrice(o.total)}`,
+                action: { label: 'Ver', onClick: () => window.location.href = '/admin/orders' },
+                duration: 8000,
+              });
+            }
+            knownOrderIds.current.add(o.id);
+          }
         });
-      }
-    });
+      } catch {}
+    };
 
-    return () => { if (unsubscribe) unsubscribe(); };
+    checkNewOrders();
+    pollTimer = setInterval(checkNewOrders, 15000);
+
+    return () => { if (pollTimer) clearInterval(pollTimer); };
   }, []);
 
   const handleLogout = () => {

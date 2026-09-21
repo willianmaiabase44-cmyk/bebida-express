@@ -1,19 +1,19 @@
 // ============================================================
-// freightService.js — Frete com fallback Base44
+// freightService.js — Frete e rota via API /server (sem fallback)
 // ============================================================
 
-import { api } from '@/lib/apiClient';
-import { isServerDown, tryServer, invokeBase44 } from '@/lib/serverHealth';
+import { apiJson } from '@/lib/apiClient';
 
-export async function calculateFreight(addressId) {
-  if (!isServerDown()) {
-    const result = await tryServer(() => api.post('/freight/calculate', { address_id: addressId }));
-    if (result.ok) return await result.res.json();
-    if (!result.down) {
-      const data = await result.res.json().catch(() => ({}));
-      throw new Error(data.error || 'Erro ao calcular frete');
-    }
-  }
-  // Fallback: Base44 calculateFreight function
-  return await invokeBase44('calculateFreight', { address_id: addressId });
+export function calculateFreight(addressId) {
+  return apiJson('/freight/calculate', {
+    method: 'POST',
+    body: JSON.stringify({ address_id: addressId }),
+  });
+}
+
+export function getDeliveryRoute(address) {
+  return apiJson('/freight/route', {
+    method: 'POST',
+    body: JSON.stringify({ address }),
+  });
 }

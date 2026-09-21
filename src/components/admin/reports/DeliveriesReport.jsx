@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listDeliveries } from '@/services/deliveryService';
+import { listOrders } from '@/services/orderService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Route, DollarSign, Bike } from 'lucide-react';
@@ -17,8 +18,8 @@ export default function DeliveriesReport() {
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data: deliveries = [], isLoading } = useQuery({ queryKey: ['rpt-deliveries'], queryFn: () => base44.entities.Delivery.list('-created_date', 1000) });
-  const { data: orders = [] } = useQuery({ queryKey: ['rpt-deliveries-orders'], queryFn: () => base44.entities.Order.list('-created_date', 1000) });
+  const { data: deliveries = [], isLoading } = useQuery({ queryKey: ['rpt-deliveries'], queryFn: () => listDeliveries() });
+  const { data: orders = [] } = useQuery({ queryKey: ['rpt-deliveries-orders'], queryFn: () => listOrders() });
 
   useEffect(() => {
     if (preset !== 'custom' && preset !== 'all') { const r = getPresetRange(preset); setDateFrom(r.from); setDateTo(r.to); }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listSales } from '@/services/saleService';
+import { listOrders } from '@/services/orderService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, ShoppingCart, TrendingUp, CreditCard } from 'lucide-react';
 import { formatPrice } from '@/lib/constants';
@@ -20,8 +21,8 @@ export default function SalesReport() {
   const [payFilter, setPayFilter] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
 
-  const { data: sales = [], isLoading: ls } = useQuery({ queryKey: ['rpt-sales'], queryFn: () => base44.entities.Sale.list('-created_date', 1000) });
-  const { data: orders = [], isLoading: lo } = useQuery({ queryKey: ['rpt-orders'], queryFn: () => base44.entities.Order.list('-created_date', 1000) });
+  const { data: sales = [], isLoading: ls } = useQuery({ queryKey: ['rpt-sales'], queryFn: () => listSales() });
+  const { data: orders = [], isLoading: lo } = useQuery({ queryKey: ['rpt-orders'], queryFn: () => listOrders() });
 
   useEffect(() => {
     if (preset !== 'custom' && preset !== 'all') { const r = getPresetRange(preset); setDateFrom(r.from); setDateTo(r.to); }

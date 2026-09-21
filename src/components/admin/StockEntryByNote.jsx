@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { listProducts, updateProduct } from '@/services/productService';
+import { listSuppliers } from '@/services/supplierService';
+import { createMovement } from '@/services/stockService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -17,13 +19,13 @@ export default function StockEntryByNote({ open, onOpenChange }) {
 
   const { data: products = [] } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: () => base44.entities.Product.list('-created_date', 500),
+    queryFn: () => listProducts({ includeInactive: true }),
     enabled: open,
   });
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['admin-suppliers'],
-    queryFn: () => base44.entities.Supplier.list('-created_date', 200),
+    queryFn: () => listSuppliers(),
     enabled: open,
   });
 
@@ -41,8 +43,8 @@ export default function StockEntryByNote({ open, onOpenChange }) {
         const product = products.find(p => p.id === item.product_id);
         if (!product) continue;
         const newStock = (product.stock || 0) + Number(item.quantity);
-        await base44.entities.Product.update(product.id, { stock: newStock });
-        await base44.entities.StockMovement.create({
+        await updateProduct(product.id, { stock: newStock });
+        await createMovement({
           product_id: product.id,
           product_name: product.name,
           type: 'entrada',

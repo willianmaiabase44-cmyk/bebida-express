@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listProducts } from '@/services/productService';
+import { createSale } from '@/services/saleService';
 import { toast } from 'sonner';
 import { Loader2, ShoppingCart } from 'lucide-react';
 import POSProductGrid from '@/components/pos/POSProductGrid';
@@ -19,7 +20,7 @@ export default function POS() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: () => base44.entities.Product.list('-created_date', 500),
+    queryFn: () => listProducts({ includeInactive: true }),
   });
 
   const addToCart = (product) => {
@@ -70,8 +71,8 @@ export default function POS() {
       const date = new Date().toISOString().split('T')[0];
       const change = paymentMethod === 'dinheiro' && amountPaid > 0 ? Math.max(0, amountPaid - total) : 0;
 
-      // Create sale record
-      const sale = await base44.entities.Sale.create({
+      // Create sale (backend handles stock decrement + movements atomically)
+      const sale = await createSale({
         items: cart.map(i => ({
           product_id: i.id,
           product_name: i.name,
@@ -86,27 +87,6 @@ export default function POS() {
         status: 'concluida',
         date,
       });
-
-      // Decrement stock + register movements + update total_sold
-      await Promise.all(cart.map(async (item) => {
-        const product = products.find(p => p.id === item.id);
-        const newStock = Math.max(0, (product?.stock ?? 0) - item.quantity);
-
-        await base44.entities.Product.update(item.id, {
-          stock: newStock,
-          total_sold: (product?.total_sold ?? 0) + item.quantity,
-        });
-
-        await base44.entities.StockMovement.create({
-          product_id: item.id,
-          product_name: item.name,
-          type: 'saida',
-          quantity: item.quantity,
-          date,
-          reason: 'Venda PDV',
-          stock_after: newStock,
-        });
-      }));
 
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       queryClient.invalidateQueries({ queryKey: ['admin-movements'] });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listMotoboys, createMotoboy, updateMotoboy, deleteMotoboy } from '@/services/motoboyService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -26,7 +26,7 @@ export default function Motoboys() {
 
   const { data: drivers = [], isLoading } = useQuery({
     queryKey: ['deliveryDrivers'],
-    queryFn: () => base44.entities.DeliveryDriver.list(),
+    queryFn: () => listMotoboys(),
   });
 
   const filtered = drivers.filter(d =>
@@ -37,18 +37,15 @@ export default function Motoboys() {
   const handleSave = async (formData) => {
     setSaving(true);
     try {
-      const res = await base44.functions.invoke('manageMotoboy', {
-        action: editing ? 'update' : 'create',
-        data: editing ? { ...formData, id: editing.id } : formData,
-      });
-      if (res.data?.error) {
-        toast.error(res.data.error);
+      if (editing) {
+        await updateMotoboy(editing.id, formData);
       } else {
-        toast.success(editing ? 'Motoboy atualizado!' : 'Motoboy cadastrado!');
-        queryClient.invalidateQueries({ queryKey: ['deliveryDrivers'] });
-        setFormOpen(false);
-        setEditing(null);
+        await createMotoboy(formData);
       }
+      toast.success(editing ? 'Motoboy atualizado!' : 'Motoboy cadastrado!');
+      queryClient.invalidateQueries({ queryKey: ['deliveryDrivers'] });
+      setFormOpen(false);
+      setEditing(null);
     } catch (err) {
       toast.error('Erro ao salvar: ' + (err.response?.data?.error || err.message || 'tente novamente'));
     }
@@ -58,7 +55,7 @@ export default function Motoboys() {
   const handleDelete = async (driver) => {
     if (!confirm(`Excluir motoboy ${driver.name}?`)) return;
     try {
-      await base44.entities.DeliveryDriver.delete(driver.id);
+      await deleteMotoboy(driver.id);
       toast.success('Motoboy excluído');
       queryClient.invalidateQueries({ queryKey: ['deliveryDrivers'] });
     } catch (err) {
@@ -69,7 +66,7 @@ export default function Motoboys() {
   const toggleStatus = async (driver) => {
     const next = driver.status === 'disponivel' ? 'offline' : 'disponivel';
     try {
-      await base44.entities.DeliveryDriver.update(driver.id, { status: next });
+      await updateMotoboy(driver.id, { status: next });
       queryClient.invalidateQueries({ queryKey: ['deliveryDrivers'] });
     } catch (err) {
       toast.error('Erro ao atualizar status');

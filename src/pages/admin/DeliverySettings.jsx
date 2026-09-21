@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { getSettings, updateSettings } from "@/services/storeSettingsService";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,8 +31,8 @@ export default function DeliverySettings() {
 
   const load = async () => {
     try {
-      const list = await base44.entities.StoreSettings.list();
-      setSettings(list?.[0] || null);
+      const settingsData = await getSettings();
+      setSettings(settingsData);
     } catch (e) {
       toast.error("Erro ao carregar configurações");
     } finally {
@@ -113,11 +113,7 @@ export default function DeliverySettings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      if (settings?.id) {
-        await base44.entities.StoreSettings.update(settings.id, form);
-      } else {
-        await base44.entities.StoreSettings.create(form);
-      }
+      await updateSettings(form);
       toast.success("Configurações salvas!");
       load();
     } catch (e) {

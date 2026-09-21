@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listCustomers } from '@/services/customerService';
+import { listOrders } from '@/services/orderService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, ShoppingCart, DollarSign, UserX } from 'lucide-react';
 import { formatPrice } from '@/lib/constants';
@@ -14,8 +15,8 @@ export default function CustomersReport() {
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data: customers = [], isLoading } = useQuery({ queryKey: ['rpt-customers'], queryFn: () => base44.entities.Customer.list('-created_date', 1000) });
-  const { data: orders = [] } = useQuery({ queryKey: ['rpt-customers-orders'], queryFn: () => base44.entities.Order.list('-created_date', 1000) });
+  const { data: customers = [], isLoading } = useQuery({ queryKey: ['rpt-customers'], queryFn: () => listCustomers() });
+  const { data: orders = [] } = useQuery({ queryKey: ['rpt-customers-orders'], queryFn: () => listOrders() });
 
   useEffect(() => {
     if (preset !== 'custom' && preset !== 'all') { const r = getPresetRange(preset); setDateFrom(r.from); setDateTo(r.to); }

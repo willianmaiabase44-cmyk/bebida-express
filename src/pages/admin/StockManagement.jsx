@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { listProducts, updateProduct } from '@/services/productService';
+import { listMovements, createMovement } from '@/services/stockService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,12 +29,12 @@ export default function StockManagement() {
 
   const { data: products = [] } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: () => base44.entities.Product.list('-created_date', 500),
+    queryFn: () => listProducts({ includeInactive: true }),
   });
 
   const { data: movements = [], isLoading } = useQuery({
     queryKey: ['admin-movements'],
-    queryFn: () => base44.entities.StockMovement.list('-created_date', 200),
+    queryFn: () => listMovements(),
   });
 
   const moveMutation = useMutation({
@@ -44,7 +45,7 @@ export default function StockManagement() {
         ? (product.stock || 0) + quantity
         : Math.max(0, (product.stock || 0) - quantity);
 
-      await base44.entities.StockMovement.create({
+      await createMovement({
         product_id: product.id,
         product_name: product.name,
         type: moveType,
@@ -53,7 +54,7 @@ export default function StockManagement() {
         reason,
         stock_after: newStock,
       });
-      await base44.entities.Product.update(product.id, { stock: newStock });
+      await updateProduct(product.id, { stock: newStock });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });

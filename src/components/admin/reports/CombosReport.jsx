@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listOrders } from '@/services/orderService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Layers, ShoppingCart, DollarSign } from 'lucide-react';
 import { formatPrice } from '@/lib/constants';
@@ -14,7 +14,7 @@ export default function CombosReport() {
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data: orders = [], isLoading } = useQuery({ queryKey: ['rpt-combos'], queryFn: () => base44.entities.Order.list('-created_date', 1000) });
+  const { data: orders = [], isLoading } = useQuery({ queryKey: ['rpt-combos'], queryFn: () => listOrders() });
 
   useEffect(() => {
     if (preset !== 'custom' && preset !== 'all') { const r = getPresetRange(preset); setDateFrom(r.from); setDateTo(r.to); }
